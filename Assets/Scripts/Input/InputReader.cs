@@ -32,7 +32,6 @@ public class InputReader : ScriptableObject, IPlayerActions
         controls.Player.Enable();
     }
 
-
     public void OnMove(InputAction.CallbackContext context)
     {
         MoveEvent?.Invoke(context.ReadValue<Vector2>()); // context.ReadValue<Vector2>() is a helper function to read the value of the action
