@@ -23,18 +23,13 @@ public class Health : NetworkBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (!IsServer) { return; }
-
         ModifyHealth(-damage);
     }
 
 
     public void RestoreHealth(int heal)
     {
-        if (!IsServer) { return; }
-
         ModifyHealth(heal);
-
     }
 
 
@@ -44,7 +39,7 @@ public class Health : NetworkBehaviour
         // if (!IsServer) { return; }
 
         int newHealth = CurrentHealth.Value + value;
-        CurrentHealth.Value += Mathf.Clamp(newHealth, 0, MaxHealth);
+        CurrentHealth.Value = Mathf.Clamp(newHealth, 0, MaxHealth);
 
         if (CurrentHealth.Value == 0)
         {

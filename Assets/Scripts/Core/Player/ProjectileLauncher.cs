@@ -1,4 +1,3 @@
-using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -94,6 +93,13 @@ public class ProjectileLauncher : NetworkBehaviour
 
         Physics2D.IgnoreCollision(playerCollider, projectileInstance.GetComponent<Collider2D>());
 
+
+
+
+        if (projectileInstance.TryGetComponent<DamageDealer>(out DamageDealer damageDealer))
+        {
+            damageDealer.SetOwner(OwnerClientId);
+        }
 
         if (projectileInstance.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
         {
