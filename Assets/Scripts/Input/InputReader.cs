@@ -1,7 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static Controls;
+
+using static Controls; // use the Controls class to access the input actions (auto created by input action code generator)
 
 
 [CreateAssetMenu(fileName = "New Input Reader", menuName = "Input/Input Reader")]
