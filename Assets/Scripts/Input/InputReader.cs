@@ -12,6 +12,9 @@ public class InputReader : ScriptableObject, IPlayerActions
     public event Action<bool> PrimaryFireEvent;
     public event Action<Vector2> MoveEvent;
 
+    public Vector2 AimPosition { get; private set; }
+
+
     // create controls field
     private Controls controls;
 
@@ -19,7 +22,6 @@ public class InputReader : ScriptableObject, IPlayerActions
     // use OnEnable for ScriptableObject instead of Awake/Start
     private void OnEnable()
     {
-
         // create and instace controls if it doesn't exist
         if (controls == null)
         {
@@ -32,14 +34,20 @@ public class InputReader : ScriptableObject, IPlayerActions
         controls.Player.Enable();
     }
 
+    private void OnDisable()
+    {
+        controls.Player.Disable();
+    }
+
+
     public void OnMove(InputAction.CallbackContext context)
     {
         MoveEvent?.Invoke(context.ReadValue<Vector2>()); // context.ReadValue<Vector2>() is a helper function to read the value of the action
     }
 
+
     public void OnPrimaryFire(InputAction.CallbackContext context)
     {
-
         if (context.performed)
         {
             PrimaryFireEvent?.Invoke(true); // use the "?" as a check, it means if something is subscribed to the event, then invoke it
@@ -48,6 +56,11 @@ public class InputReader : ScriptableObject, IPlayerActions
         {
             PrimaryFireEvent?.Invoke(false);
         }
+    }
 
+
+    public void OnAim(InputAction.CallbackContext context)
+    {
+        AimPosition = context.ReadValue<Vector2>();
     }
 }
