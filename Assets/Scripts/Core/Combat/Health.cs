@@ -13,7 +13,7 @@ public class Health : NetworkBehaviour
     public Action<Health> OnDie;
 
 
-    public override void OnNetworkDespawn()
+    public override void OnNetworkSpawn()
     {
         if (!IsServer) { return; }
 
