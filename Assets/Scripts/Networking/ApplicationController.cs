@@ -22,17 +22,23 @@ public class ApplicationController : MonoBehaviour
     async Task LaunchInMode(bool isDedicatedServer)
     {
 
+
         if (isDedicatedServer)
         {
-
         }
         else
         {
+
             ClientSingleton clientSingleton = Instantiate(clientPrefab);
-            await clientSingleton.CreateClient();
+            bool isAuthenticated = await clientSingleton.CreateClient();
 
             HostSingleton hostSingleton = Instantiate(hostPrefab);
             hostSingleton.CreateHost();
+
+            if (isAuthenticated)
+            {
+                clientSingleton.GoToMainMenu();
+            }
         }
 
     }

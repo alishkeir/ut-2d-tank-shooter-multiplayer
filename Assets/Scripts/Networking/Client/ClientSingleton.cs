@@ -1,12 +1,15 @@
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ClientSingleton : MonoBehaviour
 {
 
+    private const string _MENU_SCENE = "Menu";
+
     private static ClientSingleton instance;
 
-    private ClientGameManager gameManager;
+    public ClientGameManager GameManager { get; private set; }
 
     public static ClientSingleton Instance
     {
@@ -34,10 +37,15 @@ public class ClientSingleton : MonoBehaviour
     }
 
 
-    public async Task CreateClient()
+    public async Task<bool> CreateClient()
     {
-        gameManager = new ClientGameManager();
-        await gameManager.InitAsync();
+        GameManager = new ClientGameManager();
+        return await GameManager.InitAsync();
+    }
+
+    public void GoToMainMenu()
+    {
+        SceneManager.LoadScene(_MENU_SCENE);
     }
 
 
