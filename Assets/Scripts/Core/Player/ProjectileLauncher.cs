@@ -1,3 +1,4 @@
+using System.Threading;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ public class ProjectileLauncher : NetworkBehaviour
     [SerializeField] private GameObject clientProjectilePrefab;
     [SerializeField] private GameObject muzzleFlash;
     [SerializeField] private Collider2D playerCollider;
+    [SerializeField] private CoinCollector coinCollector;
 
 
 
@@ -20,44 +22,53 @@ public class ProjectileLauncher : NetworkBehaviour
     [SerializeField] private float projectileSpeed = 10f;
     [SerializeField] private float fireRate = 1f;
     [SerializeField] private float muzzleFlashDuration = 0.5f;
+    [SerializeField] private int costToFire = 1;
 
-    private float previousFireTime;
+
+
+    private bool shouldFire;
+
+    private float timer;
+
     private float muzzleFlashTimer;
 
 
 
 
 
-    private bool shouldFire;
-
     private void Update()
     {
-
         if (muzzleFlashTimer > 0f)
         {
             muzzleFlashTimer -= Time.deltaTime;
 
-            muzzleFlash.SetActive(muzzleFlashTimer > 0f);
-
-            // if(muzzleFlashTimer <= 0f)
-            // {
-            //     muzzleFlash.SetActive(false);
-            // }
+            if (muzzleFlashTimer <= 0f)
+            {
+                muzzleFlash.SetActive(false);
+            }
         }
 
         if (!IsOwner) { return; }
+
+        if (timer > 0)
+        {
+            timer -= Time.deltaTime;
+        }
+
         if (!shouldFire) { return; }
 
+        if (timer > 0) { return; }
 
-        if (Time.time < (1 / fireRate) + previousFireTime) { return; } // check if we can fire again
+        if (coinCollector.TotalCoins.Value < costToFire) { return; }
 
-        SpawnDummyProjectile(projectileSpawnPoint.position, projectileSpawnPoint.up);
         PrimaryFireServerRpc(projectileSpawnPoint.position, projectileSpawnPoint.up);
 
-        previousFireTime = Time.time;
+        SpawnDummyProjectile(projectileSpawnPoint.position, projectileSpawnPoint.up);
 
-
+        timer = 1 / fireRate;
     }
+
+
 
 
     // start method is too early for calling , can be messed up with delays
@@ -88,6 +99,12 @@ public class ProjectileLauncher : NetworkBehaviour
     [ServerRpc]
     private void PrimaryFireServerRpc(Vector3 position, Vector3 direction)
     {
+
+        if (coinCollector.TotalCoins.Value < costToFire) { return; }
+
+        coinCollector.SpendCoins(costToFire);
+
+
         GameObject projectileInstance = Instantiate(serverProjectilePrefab, position, Quaternion.identity);
         projectileInstance.transform.up = direction;
 

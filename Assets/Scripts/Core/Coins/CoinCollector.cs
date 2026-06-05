@@ -5,6 +5,8 @@ public class CoinCollector : NetworkBehaviour
 {
     public NetworkVariable<int> TotalCoins = new NetworkVariable<int>();
 
+
+
     private void OnTriggerEnter2D(Collider2D other)
     {
 
@@ -16,5 +18,10 @@ public class CoinCollector : NetworkBehaviour
 
         TotalCoins.Value += coinValue;
 
+    }
+
+    public void SpendCoins(int coins)
+    {
+        TotalCoins.Value -= coins;
     }
 }
