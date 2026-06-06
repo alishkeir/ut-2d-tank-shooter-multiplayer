@@ -28,15 +28,17 @@ public class LobbiesList : MonoBehaviour
 
         try
         {
-            QueryLobbiesOptions options = new QueryLobbiesOptions();
-            options.Count = 10;
-            options.Filters = new List<QueryFilter>()
-        {
-            new QueryFilter(field:QueryFilter.FieldOptions.AvailableSlots,op:QueryFilter.OpOptions.GT,value:"0"), // don't show lobbies that are full
-            new QueryFilter(field:QueryFilter.FieldOptions.IsLocked,op:QueryFilter.OpOptions.EQ,value:"0") // don't show private lobbies (that need code to join)
+            QueryLobbiesOptions options = new QueryLobbiesOptions
+            {
+                Count = 10,
+                Filters = new List<QueryFilter>()
+            {
+                new QueryFilter(field:QueryFilter.FieldOptions.AvailableSlots,op:QueryFilter.OpOptions.GT,value:"0"), // don't show lobbies that are full
+                new QueryFilter(field:QueryFilter.FieldOptions.IsLocked,op:QueryFilter.OpOptions.EQ,value:"0") // don't show private lobbies (that need code to join)
 
 
-        };
+            }
+            };
 
             QueryResponse lobbies = await LobbyService.Instance.QueryLobbiesAsync(options);
 
