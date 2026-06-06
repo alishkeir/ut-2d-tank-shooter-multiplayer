@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 
 [InitializeOnLoad]
-public class StartupSceneLoader
+public static class StartupSceneLoader
 {
     static StartupSceneLoader()
     {
@@ -19,10 +19,10 @@ public class StartupSceneLoader
 
         if (state == PlayModeStateChange.EnteredPlayMode)
         {
-
-            SceneAsset bootstrapScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(
-                EditorBuildSettings.scenes[0].path);
-            EditorSceneManager.playModeStartScene = bootstrapScene;
+            if (EditorSceneManager.GetActiveScene().buildIndex != 0)
+            {
+                EditorSceneManager.LoadScene(0);
+            }
         }
     }
 }
