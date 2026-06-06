@@ -19,9 +19,7 @@ public class StartupSceneLoader
 
         if (state == PlayModeStateChange.EnteredPlayMode)
         {
-            // Set Bootstrap scene as the play mode start scene so Unity handles
-            // unloading the editor scene gracefully, rather than calling LoadScene
-            // which can break additive scene setups.
+
             SceneAsset bootstrapScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(
                 EditorBuildSettings.scenes[0].path);
             EditorSceneManager.playModeStartScene = bootstrapScene;

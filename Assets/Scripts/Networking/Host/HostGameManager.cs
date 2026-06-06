@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class HostGameManager
+public class HostGameManager : IDisposable
 {
     private const int _MAX_CONNECTIONS = 20;
     private const string _GAME_SCENE_NAME = "Game";
@@ -20,8 +21,30 @@ public class HostGameManager
     private Allocation allocation;
     private string joinCode;
 
+    private Lobby lobby;
+
     private NetworkServer networkServer;
 
+
+    public void Dispose()
+    {
+        try
+        {
+
+            if (lobby != null)
+            {
+                LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
+            }
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+        }
+
+        lobby = null;
+        networkServer?.Dispose();
+
+    }
 
 
     public async Task StartHostAsync()
@@ -66,7 +89,9 @@ public class HostGameManager
 
             string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player");
 
-            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync($"{playerName}'s Lobby", _MAX_CONNECTIONS, lobbyOptions);
+            lobby = await LobbyService.Instance.CreateLobbyAsync($"{playerName}'s Lobby", _MAX_CONNECTIONS, lobbyOptions);
+
+
 
         }
         catch (LobbyServiceException e)
@@ -93,6 +118,38 @@ public class HostGameManager
         NetworkManager.Singleton.StartHost();
         NetworkManager.Singleton.SceneManager.LoadScene(_GAME_SCENE_NAME, LoadSceneMode.Single);
 
+    }
+
+
+    public async Task ShutdownAsync()
+    {
+        try
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
+
+        try
+        {
+            if (lobby != null)
+            {
+                await LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
+                lobby = null;
+            }
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+        }
+
+        networkServer?.Dispose();
+        networkServer = null;
     }
 
 

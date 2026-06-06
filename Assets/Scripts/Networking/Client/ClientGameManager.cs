@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -8,12 +9,16 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 
-public class ClientGameManager
+public class ClientGameManager : IDisposable
 {
 
     private NetworkClient networkClient;
     private JoinAllocation allocation;
 
+    public void Dispose()
+    {
+        networkClient?.Dispose();
+    }
 
     public async Task<bool> InitAsync()
     {
