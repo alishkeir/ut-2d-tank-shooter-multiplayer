@@ -18,7 +18,10 @@ public class HostGameManager
 
     private Allocation allocation;
     private string joinCode;
-    private string lobbyId;
+
+    private NetworkServer networkServer;
+
+
 
     public async Task StartHostAsync()
     {
@@ -60,8 +63,9 @@ public class HostGameManager
                }
             };
 
-            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync("My lobby", _MAX_CONNECTIONS, lobbyOptions);
-            lobbyId = lobby.Id;
+            string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player");
+
+            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync($"{playerName}'s Lobby", _MAX_CONNECTIONS, lobbyOptions);
 
         }
         catch (LobbyServiceException e)
@@ -69,6 +73,19 @@ public class HostGameManager
             Debug.Log(e);
             return;
         }
+
+        networkServer = new NetworkServer(NetworkManager.Singleton);
+
+
+        UserData userData = new()
+        {
+            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player")
+        };
+
+        string payload = JsonUtility.ToJson(userData);
+        byte[] payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
 
 
         NetworkManager.Singleton.StartHost();

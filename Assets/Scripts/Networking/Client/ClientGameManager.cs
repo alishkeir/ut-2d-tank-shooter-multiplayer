@@ -47,6 +47,17 @@ public class ClientGameManager
 
         transport.SetRelayServerData(relayServerData);
 
+
+        UserData userData = new()
+        {
+            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player")
+        };
+
+        string payload = JsonUtility.ToJson(userData);
+        byte[] payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
+
         NetworkManager.Singleton.StartClient();
     }
 }

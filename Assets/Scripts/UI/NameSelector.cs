@@ -15,7 +15,7 @@ public class NameSelector : MonoBehaviour
     [Range(6, 20)]
     [SerializeField] private int maxNameLength = 20;
 
-    private readonly string PlayerNameKey = "PlayerName";
+    public const string PlayerNameKey = "PlayerName";
 
     private void Start()
     {
