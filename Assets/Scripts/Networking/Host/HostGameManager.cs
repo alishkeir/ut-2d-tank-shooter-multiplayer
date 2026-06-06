@@ -1,7 +1,11 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport.Relay;
+using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
@@ -14,6 +18,7 @@ public class HostGameManager
 
     private Allocation allocation;
     private string joinCode;
+    private string lobbyId;
 
     public async Task StartHostAsync()
     {
@@ -44,11 +49,33 @@ public class HostGameManager
         RelayServerData relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls"); //TODO: check for "udp"
         transport.SetRelayServerData(relayServerData);
 
+        try
+        {
+            var lobbyOptions = new CreateLobbyOptions
+            {
+                IsPrivate = false,
+                Data = new Dictionary<string, DataObject>
+               {
+                   { "RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, joinCode) },
+               }
+            };
+
+            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync("My lobby", _MAX_CONNECTIONS, lobbyOptions);
+            lobbyId = lobby.Id;
+
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+            return;
+        }
+
 
         NetworkManager.Singleton.StartHost();
         NetworkManager.Singleton.SceneManager.LoadScene(_GAME_SCENE_NAME, LoadSceneMode.Single);
 
-
-
     }
+
+
+
 }
