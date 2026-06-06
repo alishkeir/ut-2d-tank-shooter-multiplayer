@@ -25,7 +25,6 @@ public class LobbiesList : MonoBehaviour
         if (isRefreshing) { return; }
         isRefreshing = true;
 
-
         try
         {
             QueryLobbiesOptions options = new QueryLobbiesOptions
@@ -35,8 +34,6 @@ public class LobbiesList : MonoBehaviour
             {
                 new QueryFilter(field:QueryFilter.FieldOptions.AvailableSlots,op:QueryFilter.OpOptions.GT,value:"0"), // don't show lobbies that are full
                 new QueryFilter(field:QueryFilter.FieldOptions.IsLocked,op:QueryFilter.OpOptions.EQ,value:"0") // don't show private lobbies (that need code to join)
-
-
             }
             };
 
@@ -52,7 +49,6 @@ public class LobbiesList : MonoBehaviour
                 LobbyItem lobbyItem = Instantiate(lobbyItemPrefab, lobbyItemParent);
                 lobbyItem.Initialize(this, lobby);
             }
-
         }
         catch (LobbyServiceException e)
         {
@@ -82,7 +78,6 @@ public class LobbiesList : MonoBehaviour
         {
             Debug.LogError(e);
         }
-
         isJoining = false;
     }
 
