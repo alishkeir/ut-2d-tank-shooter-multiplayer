@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -73,6 +72,8 @@ public class LobbiesList : MonoBehaviour
         {
             Lobby joiningLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
             string joinCode = joiningLobby.Data["RelayJoinCode"].Value;
+
+            ClientSingleton.Instance.GameManager.SetJoinedLobbyId(lobby.Id);
 
             await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
         }
