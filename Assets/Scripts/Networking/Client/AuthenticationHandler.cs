@@ -11,6 +11,8 @@ public static class AuthenticationHandler
     public static async Task<AuthState> DoAuth(int tries = 5)
     {
 
+        AuthenticationService.Instance.ClearSessionToken();
+
         if (AuthState == AuthState.Authenticated)
         {
             return AuthState;
