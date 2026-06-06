@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 4b1bada2ea8fe3f47bb286c80e105f71
+guid: 152e98d766b56094bab27e3db074b3b9
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2841571382646426035
-    second: Plate _ White_Bordered_0
+      213: 4772508731281614996
+    second: LobbiedBG_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Plate _ White_Bordered_0
+      name: LobbiedBG_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 516
-        height: 516
+        x: 94
+        y: 82
+        width: 934
+        height: 1247
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 15, y: 15, z: 15, w: 15}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d46b17df1e5b098d0800000000000000
-      internalID: -2841571382646426035
+      spriteID: 498ad7fb76b5b3240800000000000000
+      internalID: 4772508731281614996
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: e5c6ecbb819e59d458b54cc37eba3fa1
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Plate _ White_Bordered_0: -2841571382646426035
+      LobbiedBG_0: 4772508731281614996
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
