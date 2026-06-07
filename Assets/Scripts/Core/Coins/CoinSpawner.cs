@@ -4,7 +4,6 @@ using UnityEngine;
 public class CoinSpawner : NetworkBehaviour
 {
     [SerializeField] private RespawningCoin coinPrefab;
-
     [SerializeField] private int maxCoins = 50;
     [SerializeField] private int coinValue = 10;
 
@@ -13,13 +12,24 @@ public class CoinSpawner : NetworkBehaviour
 
     [SerializeField] private LayerMask layerMask;
 
+    [SerializeField] private NetworkObject coinParentPrefab;
+
+
 
     private float coinRadius;
+
+    private Transform coinParent;
+
 
 
     override public void OnNetworkSpawn()
     {
         if (!IsServer) { return; }
+
+        var parentObj = Instantiate(coinParentPrefab);
+        parentObj.Spawn();
+
+        coinParent = parentObj.transform;
 
         coinRadius = coinPrefab.GetComponent<CircleCollider2D>().radius;
 
@@ -32,11 +42,14 @@ public class CoinSpawner : NetworkBehaviour
 
     private void SpawnCoin()
     {
-        RespawningCoin coinInstance = Instantiate(coinPrefab, GetSpawnPoint(), Quaternion.identity);
+        RespawningCoin coinInstance = Instantiate(coinPrefab, GetSpawnPoint(), Quaternion.identity, coinParent);
 
         coinInstance.SetValue(coinValue);
         coinInstance.GetComponent<NetworkObject>().Spawn();
         coinInstance.OnCollected += HandleCoinCollected;
+        coinInstance.transform.SetParent(coinParent);
+
+        Debug.Log(coinParent.name);
     }
 
     private void HandleCoinCollected(RespawningCoin coin)
