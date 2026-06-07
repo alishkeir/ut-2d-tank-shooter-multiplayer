@@ -22,7 +22,7 @@ public class HostGameManager : IDisposable
 
     private Lobby lobby;
 
-    private NetworkServer networkServer;
+    public NetworkServer NetworkServer { get; private set; }
 
 
     public void Dispose()
@@ -40,7 +40,7 @@ public class HostGameManager : IDisposable
         }
 
         lobby = null;
-        networkServer?.Dispose();
+        NetworkServer?.Dispose();
     }
 
 
@@ -92,10 +92,10 @@ public class HostGameManager : IDisposable
             return;
         }
 
-        networkServer = new NetworkServer(NetworkManager.Singleton);
+        NetworkServer = new NetworkServer(NetworkManager.Singleton);
 
         // Remove players from the lobby when they disconnect
-        networkServer.OnUserLeft += OnUserLeft;
+        NetworkServer.OnUserLeft += OnUserLeft;
 
         UserData userData = new()
         {
@@ -128,9 +128,9 @@ public class HostGameManager : IDisposable
 
     public async Task ShutdownAsync()
     {
-        if (networkServer != null)
+        if (NetworkServer != null)
         {
-            networkServer.OnUserLeft -= OnUserLeft;
+            NetworkServer.OnUserLeft -= OnUserLeft;
         }
 
         try
@@ -158,7 +158,7 @@ public class HostGameManager : IDisposable
             Debug.LogError(e);
         }
 
-        networkServer?.Dispose();
-        networkServer = null;
+        NetworkServer?.Dispose();
+        NetworkServer = null;
     }
 }
