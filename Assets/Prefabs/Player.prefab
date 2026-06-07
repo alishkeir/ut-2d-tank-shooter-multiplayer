@@ -954,6 +954,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Player
   ShowTopMostFoldoutHeaderGroup: 1
   cinemachineCamera: {fileID: 7701512470126764099}
+  <Health>k__BackingField: {fileID: 7573419816017373280}
   cameraOwnerPriority: 20
   PlayerName:
     UpdateTraits:

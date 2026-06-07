@@ -319,6 +319,78 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &296129029
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 296129032}
+  - component: {fileID: 296129030}
+  - component: {fileID: 296129031}
+  m_Layer: 0
+  m_Name: RespawnHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &296129030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 296129029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1982391635
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &296129031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 296129029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dd9dbdea30a41545b05f1afdb1456e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RespawnHandler
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerPrefab: {fileID: 2184890490851329806, guid: 08d13bc28284153408587645dc70ee9c, type: 3}
+--- !u!4 &296129032
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 296129029}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &392922183
 GameObject:
   m_ObjectHideFlags: 0
@@ -329,7 +401,7 @@ GameObject:
   m_Component:
   - component: {fileID: 392922184}
   - component: {fileID: 392922185}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -373,7 +445,7 @@ GameObject:
   m_Component:
   - component: {fileID: 409777619}
   - component: {fileID: 409777620}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (14)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -417,7 +489,7 @@ GameObject:
   m_Component:
   - component: {fileID: 426099835}
   - component: {fileID: 426099836}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (11)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -529,7 +601,7 @@ MonoBehaviour:
   ySpawnRange: {x: -50, y: 50}
   layerMask:
     serializedVersion: 2
-    m_Bits: 129
+    m_Bits: 385
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -662,7 +734,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 75.73683, y: -50.42106, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1188,7 +1260,7 @@ GameObject:
   m_Component:
   - component: {fileID: 719422764}
   - component: {fileID: 719422765}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1669,7 +1741,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1132162335}
   - component: {fileID: 1132162336}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1713,7 +1785,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1148136196}
   - component: {fileID: 1148136197}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (6)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1827,7 +1899,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1190397963}
   - component: {fileID: 1190397964}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (8)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1871,7 +1943,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1229676792}
   - component: {fileID: 1229676793}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (13)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2231,7 +2303,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1376387863}
   - component: {fileID: 1376387864}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (15)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2274,7 +2346,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1391461277}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoints
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2523,7 +2595,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1692020898}
   - component: {fileID: 1692020899}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (10)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2639,7 +2711,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1896174267}
   - component: {fileID: 1896174268}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (7)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2683,7 +2755,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1907001639}
   - component: {fileID: 1907001640}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2789,7 +2861,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1988409366}
   - component: {fileID: 1988409367}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SpawnPoint (9)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3078,9 +3150,10 @@ SceneRoots:
   m_Roots:
   - {fileID: 288517535}
   - {fileID: 500114253}
+  - {fileID: 6597331746472643788}
+  - {fileID: 296129032}
   - {fileID: 159070595}
+  - {fileID: 1391461277}
   - {fileID: 702438374}
   - {fileID: 519420032}
   - {fileID: 911545409}
-  - {fileID: 6597331746472643788}
-  - {fileID: 1391461277}

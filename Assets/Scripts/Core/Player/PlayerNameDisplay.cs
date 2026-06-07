@@ -12,7 +12,6 @@ public class PlayerNameDisplay : MonoBehaviour
     {
         HandlePlayerNameChanged(string.Empty, player.PlayerName.Value);
         player.PlayerName.OnValueChanged += HandlePlayerNameChanged;
-        Debug.Log(player.PlayerName.Value);
     }
 
     private void HandlePlayerNameChanged(FixedString32Bytes previousValue, FixedString32Bytes newValue)

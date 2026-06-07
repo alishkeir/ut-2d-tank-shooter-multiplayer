@@ -48,7 +48,6 @@ public class LobbiesList : MonoBehaviour
                 LobbyItem lobbyItem = Instantiate(lobbyItemPrefab, lobbyItemParent);
                 lobbyItem.Initialize(this, lobby);
 
-                Debug.Log(lobby);
             }
         }
         catch (LobbyServiceException e)
