@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ public class Leaderboard : NetworkBehaviour
     [SerializeField] private LeaderboardEntityDisplay leaderboardEntityPrefab;
 
     private NetworkList<LeaderboardEntityState> leaderboardEntities;
+
+    private List<LeaderboardEntityDisplay> entityDisplays = new();
 
     private void Awake()
     {
@@ -63,9 +66,33 @@ public class Leaderboard : NetworkBehaviour
         switch (changeEvent.Type)
         {
             case NetworkListEvent<LeaderboardEntityState>.EventType.Add:
-                Instantiate(leaderboardEntityPrefab, leaderboardEntityHolder);
+
+                if (!entityDisplays.Any(x => x.ClientId == changeEvent.Value.ClientId))
+                {
+                    LeaderboardEntityDisplay entityDisplay = Instantiate(leaderboardEntityPrefab, leaderboardEntityHolder);
+                    entityDisplay.Initialise(changeEvent.Value.ClientId, changeEvent.Value.PlayerName, changeEvent.Value.Coins);
+                    entityDisplays.Add(entityDisplay);
+                }
                 break;
+
             case NetworkListEvent<LeaderboardEntityState>.EventType.Remove:
+                LeaderboardEntityDisplay entityDisplayToRemove = entityDisplays.FirstOrDefault(x => x.ClientId == changeEvent.Value.ClientId);
+                if (entityDisplayToRemove != null)
+                {
+                    entityDisplayToRemove.transform.SetParent(null);
+                    Destroy(entityDisplayToRemove.gameObject);
+                    entityDisplays.Remove(entityDisplayToRemove);
+                }
+                break;
+
+            case NetworkListEvent<LeaderboardEntityState>.EventType.Value:
+                LeaderboardEntityDisplay entityDisplayToUpdate = entityDisplays.FirstOrDefault(x => x.ClientId == changeEvent.Value.ClientId);
+
+                if (entityDisplayToUpdate != null)
+                {
+                    entityDisplayToUpdate.UpdateCoins(changeEvent.Value.Coins);
+                }
+
                 break;
         }
     }
