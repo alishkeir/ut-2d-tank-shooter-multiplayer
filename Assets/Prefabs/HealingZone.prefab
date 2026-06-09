@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 40545604
+  GlobalObjectIdHash: 2126707625
   InScenePlacedSourceGlobalObjectIdHash: 2126707625
   DeferredDespawnTick: 0
   Ownership: 1
@@ -184,7 +184,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   maxHealPower: 30
-  healCooldown: 30
+  healCooldown: 10
   healTickRate: 1
   coinsPerTick: 10
   healPerTick: 10
