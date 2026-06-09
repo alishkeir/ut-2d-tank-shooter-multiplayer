@@ -375,7 +375,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RespawnHandler
   ShowTopMostFoldoutHeaderGroup: 1
-  playerPrefab: {fileID: 2184890490851329806, guid: 08d13bc28284153408587645dc70ee9c, type: 3}
+  playerPrefab: {fileID: 705929069379905089, guid: 08d13bc28284153408587645dc70ee9c, type: 3}
+  keptCoinsPercentage: 60
 --- !u!4 &296129032
 Transform:
   m_ObjectHideFlags: 0
@@ -3391,6 +3392,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   leaderboardEntityHolder: {fileID: 658627463}
   leaderboardEntityPrefab: {fileID: 9005291668901941523, guid: dadf8c4913f05434f9bbf85c0cdff390, type: 3}
+  entitiesToDisplay: 8
 --- !u!114 &2138918646
 MonoBehaviour:
   m_ObjectHideFlags: 0

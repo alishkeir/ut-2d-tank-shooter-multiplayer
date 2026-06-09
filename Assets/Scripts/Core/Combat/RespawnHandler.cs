@@ -17,7 +17,8 @@ using UnityEngine;
 
 public class RespawnHandler : NetworkBehaviour
 {
-    [SerializeField] private NetworkObject playerPrefab; // The player prefab to instantiate when respawning.
+    [SerializeField] private Player playerPrefab; // The player prefab to instantiate when respawning.
+    [SerializeField] private float keptCoinsPercentage = 70f; // The percentage of coins the player keeps on death.
 
     public override void OnNetworkSpawn()
     {
@@ -62,24 +63,27 @@ public class RespawnHandler : NetworkBehaviour
 
     // Called when a player's Health reaches 0.
     // Destroys the old player object and starts the respawn coroutine.
+    // The coins are kept by the respawned player.
     private void HandlePlayerDie(Player player)
     {
+        int coinsToKeep = (int)(player.Coins.TotalCoins.Value * (keptCoinsPercentage / 100f));
+
         Destroy(player.gameObject);
 
-        StartCoroutine(RespawnPlayerCoroutine(player.OwnerClientId));
-
-
+        StartCoroutine(RespawnPlayerCoroutine(player.OwnerClientId, coinsToKeep));
     }
 
     // Waits one frame (so the destroy is fully processed) and then spawns a
     // fresh player object at a random spawn point, re-attaching it to the
     // original owner client.
-    IEnumerator RespawnPlayerCoroutine(ulong ownerClientId)
+    // The coins are kept by the respawned player.
+    IEnumerator RespawnPlayerCoroutine(ulong ownerClientId, int coinsToKeep)
     {
         yield return null;
 
-        NetworkObject playerInstance = Instantiate(playerPrefab, SpawnPoint.GetRandomSpawnPos(), Quaternion.identity);
-        playerInstance.SpawnAsPlayerObject(ownerClientId);
+        Player playerInstance = Instantiate(playerPrefab, SpawnPoint.GetRandomSpawnPos(), Quaternion.identity);
+        playerInstance.NetworkObject.SpawnAsPlayerObject(ownerClientId);
+        playerInstance.Coins.TotalCoins.Value = coinsToKeep; // Keep the coins on respawn.
 
     }
 
