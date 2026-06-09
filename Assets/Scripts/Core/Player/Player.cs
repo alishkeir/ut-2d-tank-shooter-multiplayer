@@ -26,8 +26,12 @@ public class Player : NetworkBehaviour
 
     [field: SerializeField] public Health Health { get; private set; }            // Health component on the player.
     [field: SerializeField] public CoinCollector Coins { get; private set; }     // Coin pickup component on the player.
+    [SerializeField] private SpriteRenderer minimapIcon;  // Sprite renderer for the player's icon on the minimap
 
+
+    [Header("Settings")]
     [SerializeField] private int cameraOwnerPriority = 20; // Priority value used to make the local player's camera "win" the Cinemachine blend.
+    [SerializeField] Color playerColor = Color.white; // Color to use for the player's icon on the minimap.
 
     public NetworkVariable<FixedString32Bytes> PlayerName = new NetworkVariable<FixedString32Bytes>(); // a tring value that is synced over the network
 
@@ -56,7 +60,9 @@ public class Player : NetworkBehaviour
             // Bumping the priority makes Cinemachine pick this camera.
             cinemachineCamera.Priority = cameraOwnerPriority;
             cinemachineCamera.Prioritize();
+            minimapIcon.color = playerColor; // Set the local player's minimap icon to green.
         }
+
     }
 
     public override void OnNetworkDespawn()

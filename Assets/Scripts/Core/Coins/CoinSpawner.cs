@@ -71,8 +71,6 @@ public class CoinSpawner : NetworkBehaviour
         coinInstance.GetComponent<NetworkObject>().Spawn();
         coinInstance.OnCollected += HandleCoinCollected;
         coinInstance.transform.SetParent(coinParent);
-
-        Debug.Log(coinParent.name);
     }
 
     // Called whenever a coin is collected. Re-spawns it at a new valid location.
