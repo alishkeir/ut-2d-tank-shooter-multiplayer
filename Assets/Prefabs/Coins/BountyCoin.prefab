@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3389025622363007653
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 180069671166556941, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7bfd0a0977e81b84a8f1d12195e5883a, type: 3}
+    - target: {fileID: 191972090192771459, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 1105693613
+      objectReference: {fileID: 0}
+    - target: {fileID: 655683966687539365, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_Name
+      value: BountyCoin
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1558251294664905405, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 655683966687539365, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5022546654098139547}
+  m_SourcePrefab: {fileID: 100100000, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+--- !u!1 &2743054801401059840 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 655683966687539365, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+  m_PrefabInstance: {fileID: 3389025622363007653}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5022546654098139547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2743054801401059840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9306befc5be54e498e8008b87a1dcaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BountyCoin
+  ShowTopMostFoldoutHeaderGroup: 1
+  spriteRenderer: {fileID: 3276228749268406696}
+--- !u!212 &3276228749268406696 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 180069671166556941, guid: 960a0a215b6b13945a67ad7a4a0f3898, type: 3}
+  m_PrefabInstance: {fileID: 3389025622363007653}
+  m_PrefabAsset: {fileID: 0}
