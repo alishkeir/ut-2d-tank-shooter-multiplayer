@@ -11,6 +11,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private CinemachineCamera cinemachineCamera;
 
     [field: SerializeField] public Health Health { get; private set; }
+    [field: SerializeField] public CoinCollector Coins { get; private set; }
 
     [SerializeField] private int cameraOwnerPriority = 20;
 

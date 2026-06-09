@@ -955,6 +955,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   cinemachineCamera: {fileID: 7701512470126764099}
   <Health>k__BackingField: {fileID: 7573419816017373280}
+  <Coins>k__BackingField: {fileID: 1148416028050833032}
   cameraOwnerPriority: 20
   PlayerName:
     UpdateTraits:
