@@ -59,7 +59,7 @@ public class RespawningCoin : Coin
 
     // Server-only: called by CoinSpawner after it has moved the coin to a new position.
     // Resets the "already collected" flag so the coin can be collected again.
-    internal void Reset()
+    public void Reset()
     {
         alraedyCollected = false;
     }

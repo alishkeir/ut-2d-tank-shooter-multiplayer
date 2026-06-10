@@ -38,6 +38,8 @@ public class HostGameManager : IDisposable
 
     private Lobby lobby;           // The Unity Lobby we created for matchmaking.
 
+    private bool isStartingHost = false;   // True while we are starting the host.
+
 
     // The NetworkServer that tracks connected clients and approves connections.
     public NetworkServer NetworkServer { get; private set; }
@@ -46,21 +48,7 @@ public class HostGameManager : IDisposable
     // Cleanly tears down the host: deletes the lobby, disposes the NetworkServer.
     public void Dispose()
     {
-        try
-        {
-            if (lobby != null)
-            {
-                // Best-effort: ask the lobby service to remove our lobby.
-                LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
-            }
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-        }
-
-        lobby = null;
-        NetworkServer?.Dispose();
+        _ = ShutdownAsync();
     }
 
 
@@ -74,6 +62,9 @@ public class HostGameManager : IDisposable
     // 7. Starts the Netcode host and loads the Game scene.
     public async Task StartHostAsync()
     {
+        if (isStartingHost) { return; }
+
+        isStartingHost = true;
         try
         {
             // Ask the Relay service to allocate a slot for up to _MAX_CONNECTIONS clients.
@@ -147,6 +138,7 @@ public class HostGameManager : IDisposable
         // Start the Netcode host (server + local client) and load the game scene.
         NetworkManager.Singleton.StartHost();
         NetworkManager.Singleton.SceneManager.LoadScene(_GAME_SCENE_NAME, LoadSceneMode.Single);
+        isStartingHost = false;
     }
 
     // Called by NetworkServer when a connected user disconnects.
@@ -190,8 +182,8 @@ public class HostGameManager : IDisposable
         {
             if (lobby != null)
             {
-                await LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
                 lobby = null;
+                await LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
             }
         }
         catch (LobbyServiceException e)
@@ -202,4 +194,6 @@ public class HostGameManager : IDisposable
         NetworkServer?.Dispose();
         NetworkServer = null;
     }
+
+
 }

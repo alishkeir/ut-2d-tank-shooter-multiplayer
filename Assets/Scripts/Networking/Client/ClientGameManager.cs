@@ -32,13 +32,9 @@ public class ClientGameManager : IDisposable
     private NetworkClient networkClient; // Wraps the NetworkManager and handles disconnect events.
     private JoinAllocation allocation;   // Our allocation on the Relay server.
     private string joinedLobbyId;        // The lobby ID we are currently a member of (or null).
+    private bool isStartingClient = false;   // True while we are starting the client.
 
-    // Called by ClientSingleton.OnDestroy. Leaves any joined lobby and disposes the NetworkClient.
-    public void Dispose()
-    {
-        LeaveLobby();
-        networkClient?.Dispose();
-    }
+
 
     // Removes us from the lobby we joined, if any. Best-effort; logs errors but does not throw.
     private async void LeaveLobby()
@@ -79,6 +75,9 @@ public class ClientGameManager : IDisposable
     // NetworkManager transport, attaches our UserData payload, and starts the client.
     public async Task StartClientAsync(string joinCode)
     {
+        if (isStartingClient) { return; }
+        isStartingClient = true;
+
         try
         {
             // Ask the Relay service to let us join the host's allocation.
@@ -112,11 +111,25 @@ public class ClientGameManager : IDisposable
 
         // Finally, start the client and connect.
         NetworkManager.Singleton.StartClient();
+
+        isStartingClient = false;
     }
 
     // Stores the lobby ID after we join one. Used by LeaveLobby() during shutdown.
     public void SetJoinedLobbyId(string lobbyId)
     {
         joinedLobbyId = lobbyId;
+    }
+
+    public void Disconnect()
+    {
+        networkClient.Disconnect();
+    }
+
+    // Called by ClientSingleton.OnDestroy. Leaves any joined lobby and disposes the NetworkClient.
+    public void Dispose()
+    {
+        LeaveLobby();
+        networkClient?.Dispose();
     }
 }

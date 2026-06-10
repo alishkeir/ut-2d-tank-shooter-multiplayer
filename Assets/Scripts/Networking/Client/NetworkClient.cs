@@ -27,18 +27,6 @@ public class NetworkClient : IDisposable
     }
 
 
-    // Clean up our subscription. Called from ClientGameManager.Dispose.
-    public void Dispose()
-    {
-        if (networkManager != null)
-        {
-            // Unsubscribe so we don't react to disconnect events after disposal.
-            networkManager.OnClientDisconnectCallback -= OnClientDisconnect;
-
-        }
-    }
-
-
 
 
 
@@ -51,6 +39,12 @@ public class NetworkClient : IDisposable
     {
         if (clientId != 0 && clientId != networkManager.LocalClientId) { return; }
 
+        Disconnect();
+
+    }
+
+    public void Disconnect()
+    {
         // If we're not already in the menu, load it.
         if (SceneManager.GetActiveScene().name != _MENU_SCENE_NAME)
         {
@@ -62,7 +56,18 @@ public class NetworkClient : IDisposable
         {
             networkManager.Shutdown();
         }
+    }
 
+
+    // Clean up our subscription. Called from ClientGameManager.Dispose.
+    public void Dispose()
+    {
+        if (networkManager != null)
+        {
+            // Unsubscribe so we don't react to disconnect events after disposal.
+            networkManager.OnClientDisconnectCallback -= OnClientDisconnect;
+
+        }
     }
 
 
