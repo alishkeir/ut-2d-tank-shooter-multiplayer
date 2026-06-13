@@ -18,7 +18,7 @@ using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-public class Player : NetworkBehaviour
+public class TankPlayer : NetworkBehaviour
 {
 
     [Header("References")]
@@ -37,8 +37,8 @@ public class Player : NetworkBehaviour
 
     // Static events fired on the server when players spawn/despawn.
     // RespawnHandler and Leaderboard both subscribe to these.
-    public static event Action<Player> OnPlayerSpawned;
-    public static event Action<Player> OnPlayerDespawned;
+    public static event Action<TankPlayer> OnPlayerSpawned;
+    public static event Action<TankPlayer> OnPlayerDespawned;
 
 
     public override void OnNetworkSpawn()

@@ -17,7 +17,7 @@ using UnityEngine;
 
 public class RespawnHandler : NetworkBehaviour
 {
-    [SerializeField] private Player playerPrefab; // The player prefab to instantiate when respawning.
+    [SerializeField] private TankPlayer playerPrefab; // The player prefab to instantiate when respawning.
     [SerializeField] private float keptCoinsPercentage = 70f; // The percentage of coins the player keeps on death.
 
     public override void OnNetworkSpawn()
@@ -25,16 +25,16 @@ public class RespawnHandler : NetworkBehaviour
         if (!IsServer) { return; }
 
         // Catch up on any players that already exist (e.g. late join).
-        Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        TankPlayer[] players = FindObjectsByType<TankPlayer>(FindObjectsSortMode.None);
 
-        foreach (Player player in players)
+        foreach (TankPlayer player in players)
         {
             HandlePlayerSpawned(player);
         }
 
         // Subscribe to future spawn/despawn events.
-        Player.OnPlayerSpawned += HandlePlayerSpawned;
-        Player.OnPlayerDespawned += HandlePlayerDespawned;
+        TankPlayer.OnPlayerSpawned += HandlePlayerSpawned;
+        TankPlayer.OnPlayerDespawned += HandlePlayerDespawned;
     }
 
     public override void OnNetworkDespawn()
@@ -42,20 +42,20 @@ public class RespawnHandler : NetworkBehaviour
         if (!IsServer) { return; }
         // NOTE: Original code unsubscribed from OnPlayerDespawned for the spawn callback.
         // This is preserved as-is to avoid changing runtime behavior; see source for details.
-        Player.OnPlayerDespawned -= HandlePlayerSpawned;
-        Player.OnPlayerDespawned -= HandlePlayerDespawned;
+        TankPlayer.OnPlayerDespawned -= HandlePlayerSpawned;
+        TankPlayer.OnPlayerDespawned -= HandlePlayerDespawned;
 
     }
 
     // Subscribe this player's death event so we can respawn them.
-    private void HandlePlayerSpawned(Player player)
+    private void HandlePlayerSpawned(TankPlayer player)
     {
         player.Health.OnDie += (health) => HandlePlayerDie(player);
     }
 
 
     // Unsubscribe from the player's death event when they despawn.
-    private void HandlePlayerDespawned(Player player)
+    private void HandlePlayerDespawned(TankPlayer player)
     {
         player.Health.OnDie -= (health) => HandlePlayerDie(player);
 
@@ -64,7 +64,7 @@ public class RespawnHandler : NetworkBehaviour
     // Called when a player's Health reaches 0.
     // Destroys the old player object and starts the respawn coroutine.
     // The coins are kept by the respawned player.
-    private void HandlePlayerDie(Player player)
+    private void HandlePlayerDie(TankPlayer player)
     {
         int coinsToKeep = (int)(player.Coins.TotalCoins.Value * (keptCoinsPercentage / 100f));
 
@@ -81,7 +81,7 @@ public class RespawnHandler : NetworkBehaviour
     {
         yield return null;
 
-        Player playerInstance = Instantiate(playerPrefab, SpawnPoint.GetRandomSpawnPos(), Quaternion.identity);
+        TankPlayer playerInstance = Instantiate(playerPrefab, SpawnPoint.GetRandomSpawnPos(), Quaternion.identity);
         playerInstance.NetworkObject.SpawnAsPlayerObject(ownerClientId);
         playerInstance.Coins.TotalCoins.Value = coinsToKeep; // Keep the coins on respawn.
 

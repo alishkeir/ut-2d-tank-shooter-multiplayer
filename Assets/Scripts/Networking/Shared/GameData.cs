@@ -13,6 +13,22 @@
 using System;
 
 
+public enum Map
+{
+    Default,
+}
+
+public enum GameMode
+{
+    Default,
+}
+
+public enum GameQueue
+{
+    Solo,
+    Team
+}
+
 [Serializable]
 public class UserData
 {
@@ -22,4 +38,24 @@ public class UserData
     // The player's Unity Authentication ID (a stable, unique identifier
     // that persists across sessions for the same anonymous account).
     public string userAuthId;
+
+
+    // The player's game preferences. 
+    // This is sent to the server and stored on the server.
+    public GameInfo userGamePreferences;
+}
+
+
+// GameInfo is sent to the server and stored on the server.
+[Serializable]
+public class GameInfo
+{
+    public Map map;
+    public GameMode gameMode;
+    public GameQueue gameQueue;
+
+    public string ToMultiplayQueue()
+    {
+        return "";
+    }
 }

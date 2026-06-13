@@ -19,7 +19,7 @@ public class HealingZone : NetworkBehaviour
 
     private float remainingCooldown;  // Remaining cooldown time.
     private float tickTimer;  // Remaining tick rate.
-    private List<Player> playersInZone = new();  // List of players currently in the healing zone.
+    private List<TankPlayer> playersInZone = new();  // List of players currently in the healing zone.
 
     private NetworkVariable<int> healPower = new();  // Current heal power, synchronized across the network.
 
@@ -54,7 +54,7 @@ public class HealingZone : NetworkBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!IsServer) { return; }
-        if (!other.attachedRigidbody.TryGetComponent<Player>(out Player player)) { return; }
+        if (!other.attachedRigidbody.TryGetComponent<TankPlayer>(out TankPlayer player)) { return; }
         playersInZone.Add(player);
     }
 
@@ -84,7 +84,7 @@ public class HealingZone : NetworkBehaviour
         {
 
             // Apply healing to all players in the healing zone.
-            foreach (Player player in playersInZone)
+            foreach (TankPlayer player in playersInZone)
             {
                 if (healPower.Value == 0) { break; }
                 if (player.Health.CurrentHealth.Value >= player.Health.MaxHealth) { continue; }
@@ -106,7 +106,7 @@ public class HealingZone : NetworkBehaviour
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!IsServer) { return; }
-        if (!other.attachedRigidbody.TryGetComponent<Player>(out Player player)) { return; }
+        if (!other.attachedRigidbody.TryGetComponent<TankPlayer>(out TankPlayer player)) { return; }
         playersInZone.Remove(player);
 
     }

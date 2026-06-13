@@ -14,7 +14,7 @@ using UnityEngine;
 public class PlayerNameDisplay : MonoBehaviour
 {
 
-    [SerializeField] private Player player;             // The networked player whose name we are showing.
+    [SerializeField] private TankPlayer player;             // The networked player whose name we are showing.
     [SerializeField] private TMP_Text playerNameText;  // The text element that will display the name.
 
     private void Start()

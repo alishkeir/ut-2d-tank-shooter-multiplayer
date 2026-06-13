@@ -64,15 +64,15 @@ public class Leaderboard : NetworkBehaviour
         if (IsServer)
         {
             // Catch up on players that already exist (e.g. late join).
-            Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-            foreach (Player player in players)
+            TankPlayer[] players = FindObjectsByType<TankPlayer>(FindObjectsSortMode.None);
+            foreach (TankPlayer player in players)
             {
                 HandlePlayerSpawned(player);
             }
 
             // Track future spawn / despawn events.
-            Player.OnPlayerSpawned += HandlePlayerSpawned;
-            Player.OnPlayerDespawned += HandlePlayerDespawned;
+            TankPlayer.OnPlayerSpawned += HandlePlayerSpawned;
+            TankPlayer.OnPlayerDespawned += HandlePlayerDespawned;
         }
     }
 
@@ -85,8 +85,8 @@ public class Leaderboard : NetworkBehaviour
 
         if (IsServer)
         {
-            Player.OnPlayerSpawned -= HandlePlayerSpawned;
-            Player.OnPlayerDespawned -= HandlePlayerDespawned;
+            TankPlayer.OnPlayerSpawned -= HandlePlayerSpawned;
+            TankPlayer.OnPlayerDespawned -= HandlePlayerDespawned;
         }
     }
 
@@ -156,7 +156,7 @@ public class Leaderboard : NetworkBehaviour
 
     // Server-only: called when a player spawns. Adds them to the leaderboard
     // and subscribes to their coin-count changes.
-    private void HandlePlayerSpawned(Player player)
+    private void HandlePlayerSpawned(TankPlayer player)
     {
         leaderboardEntities.Add(new LeaderboardEntityState
         {
@@ -169,7 +169,7 @@ public class Leaderboard : NetworkBehaviour
     }
 
     // Server-only: called when a player despawns. Removes them from the leaderboard.
-    private void HandlePlayerDespawned(Player player)
+    private void HandlePlayerDespawned(TankPlayer player)
     {
         foreach (LeaderboardEntityState entity in leaderboardEntities)
         {
