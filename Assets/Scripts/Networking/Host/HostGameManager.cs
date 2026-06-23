@@ -182,8 +182,8 @@ public class HostGameManager : IDisposable
         {
             if (lobby != null)
             {
-                lobby = null;
                 await LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
+                lobby = null;
             }
         }
         catch (LobbyServiceException e)
