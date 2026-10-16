@@ -60,7 +60,7 @@ public class NetworkServer : IDisposable
 
 
 
-    public bool OpenConnection(string ip, int port)
+    public bool  OpenConnection(string ip, int port)
     {
         UnityTransport transport = networkManager.gameObject.GetComponent<UnityTransport>();
         transport.SetConnectionData(ip, (ushort)port);

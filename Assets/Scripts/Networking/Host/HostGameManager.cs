@@ -13,187 +13,167 @@
 //
 // Used by: HostSingleton, MainMenu (via HostSingleton.Instance.GameManager).
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport.Relay;
+using Unity.Services.Relay.Models; // UNITY 6 COMPAT: AllocationUtils moved here from Unity.Networking.Transport.Relay
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
-using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class HostGameManager : IDisposable
 {
-    // Max number of players that can connect to a single host (Relay + Lobby limit).
-    private const int _MAX_CONNECTIONS = 20;
-    // Name of the scene the host loads after starting. Must match the scene in Build Settings.
-    private const string _GAME_SCENE_NAME = "Game";
+    private Allocation allocation;
+    private Coroutine heartbeatCoroutine;
+    private string joinCode;
+    private string lobbyId;
 
-    private Allocation allocation; // Our Relay allocation.
-    private string joinCode;       // The Relay join code other clients use to connect.
+    private const int maxConnections = 20;
+    private const string GameSceneName = "Game";
 
-    private Lobby lobby;           // The Unity Lobby we created for matchmaking.
+    public NetworkServer NetworkServerInstance { get; private set; }
 
-    private bool isStartingHost = false;   // True while we are starting the host.
-
-
-    // The NetworkServer that tracks connected clients and approves connections.
-    public NetworkServer NetworkServer { get; private set; }
-
-
-    // Cleanly tears down the host: deletes the lobby, disposes the NetworkServer.
-    public void Dispose()
-    {
-        _ = ShutdownAsync();
-    }
-
-
-    // Starts the host end-to-end:
-    // 1. Creates a Relay allocation (up to _MAX_CONNECTIONS).
-    // 2. Asks the Relay service for a join code.
-    // 3. Configures Unity Transport to use the Relay server.
-    // 4. Creates a public Unity Lobby with the join code in its data.
-    // 5. Spins up the NetworkServer to track users.
-    // 6. Attaches our UserData payload to the connection.
-    // 7. Starts the Netcode host and loads the Game scene.
     public async Task StartHostAsync()
     {
-        if (isStartingHost) { return; }
-
-        isStartingHost = true;
         try
         {
-            // Ask the Relay service to allocate a slot for up to _MAX_CONNECTIONS clients.
-            allocation = await RelayService.Instance.CreateAllocationAsync(_MAX_CONNECTIONS);
+            allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections: maxConnections);
         }
-        catch (System.Exception e)
+        catch (Exception exc)
         {
-            Debug.LogError(e);
+            Debug.LogError(exc);
             return;
         }
 
         try
         {
-            // Convert the allocation into a short join code other clients can enter.
-            joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            Debug.Log($"Join Code: {joinCode}");
+            joinCode = await RelayService.Instance.GetJoinCodeAsync(allocationId: allocation.AllocationId);
+            Debug.Log(joinCode);
         }
-        catch (System.Exception e)
+        catch (Exception exc)
         {
-            Debug.LogError(e);
+            Debug.LogError(exc);
             return;
         }
 
-        // Configure Unity Transport to talk to the Relay server.
         UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+
         RelayServerData relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
         transport.SetRelayServerData(relayServerData);
 
         try
         {
-            // Create a lobby that's discoverable in the lobby list (IsPrivate = false).
-            // The join code is stored in the lobby data so clients can read it on join.
-            var lobbyOptions = new CreateLobbyOptions
+            CreateLobbyOptions lobbyOptions = new CreateLobbyOptions();
+            lobbyOptions.IsPrivate = false;
+            lobbyOptions.Data = new Dictionary<string, DataObject>()
             {
-                IsPrivate = false,
-                Data = new Dictionary<string, DataObject>
                 {
-                    { "RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, joinCode) },
+                    "JoinCode", new DataObject(
+                        visibility: DataObject.VisibilityOptions.Member,
+                        value: joinCode)
                 }
             };
+            string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Unknown");
 
-            string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player");
+            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(
+                $"{playerName}'s Lobby", maxConnections, options: lobbyOptions);
 
-            // The lobby name is "<playerName>'s Lobby".
-            lobby = await LobbyService.Instance.CreateLobbyAsync($"{playerName}'s Lobby", _MAX_CONNECTIONS, lobbyOptions);
+            lobbyId = lobby.Id;
+
+            heartbeatCoroutine = HostSingleton.Instance.StartCoroutine(HeartbeatLobby(15));
         }
-        catch (LobbyServiceException e)
+        catch (LobbyServiceException lobbyServiceException)
         {
-            Debug.Log(e);
+            Debug.LogError(lobbyServiceException);
             return;
         }
 
-        NetworkServer = new NetworkServer(NetworkManager.Singleton);
+        NetworkServerInstance = new NetworkServer(networkManager: NetworkManager.Singleton);
 
-        // Remove players from the lobby when they disconnect, so the player count stays accurate.
-        NetworkServer.OnUserLeft += OnUserLeft;
-
-        // Build a UserData payload with our display name + Unity Auth ID.
-        // The server reads it via NetworkServer.ApprovalCheck.
-        UserData userData = new()
+        UserData userData = new UserData
         {
-            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player"),
+            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
             userAuthId = AuthenticationService.Instance.PlayerId
         };
 
         string payload = JsonUtility.ToJson(userData);
-        byte[] payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
 
         NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
 
-        // Start the Netcode host (server + local client) and load the game scene.
         NetworkManager.Singleton.StartHost();
-        NetworkManager.Singleton.SceneManager.LoadScene(_GAME_SCENE_NAME, LoadSceneMode.Single);
-        isStartingHost = false;
+
+        NetworkServerInstance.OnUserLeft += HandleClientLeft;
+
+        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 
-    // Called by NetworkServer when a connected user disconnects.
-    // Removes that user from the lobby so other clients see an updated player count.
-    private async void OnUserLeft(string authId)
+    private async void HandleClientLeft(string authId)
     {
-        if (lobby == null) { return; }
-
         try
         {
-            await LobbyService.Instance.RemovePlayerAsync(lobby.Id, authId);
+            await LobbyService.Instance.RemovePlayerAsync(lobbyId, authId);
         }
-        catch (LobbyServiceException e)
+        catch (LobbyServiceException lobbyServiceException)
         {
-            Debug.LogError($"Failed to remove player from lobby: {e}");
+            Debug.LogError(lobbyServiceException);
         }
     }
 
-    // Cleanly shuts down the host: stops the NetworkManager, deletes the lobby,
-    // and disposes the NetworkServer. Safe to call multiple times.
+    private IEnumerator HeartbeatLobby(float waitTimeSeconds)
+    {
+        WaitForSecondsRealtime delay = new WaitForSecondsRealtime(waitTimeSeconds);
+        while (true)
+        {
+            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+            yield return delay;
+        }
+    }
+
+    public async void Dispose()
+    {
+        await ShutdownAsync();
+    }
+
+
     public async Task ShutdownAsync()
     {
-        if (NetworkServer != null)
+        if (heartbeatCoroutine != null)
         {
-            NetworkServer.OnUserLeft -= OnUserLeft;
+            HostSingleton.Instance.StopCoroutine(heartbeatCoroutine);
+            heartbeatCoroutine = null;
         }
-
-        try
+        if (!string.IsNullOrEmpty(lobbyId))
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
+            try
             {
-                NetworkManager.Singleton.Shutdown();
+                await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
             }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(e);
-        }
-
-        try
-        {
-            if (lobby != null)
+            catch (LobbyServiceException lobbyServiceException)
             {
-                await LobbyService.Instance.DeleteLobbyAsync(lobby.Id);
-                lobby = null;
+
+                if (lobbyServiceException.Reason != LobbyExceptionReason.LobbyNotFound)
+                {
+                    Debug.LogError(lobbyServiceException);
+                }
             }
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
+
+            lobbyId = string.Empty;
         }
 
-        NetworkServer?.Dispose();
-        NetworkServer = null;
+        if (NetworkServerInstance != null)
+        {
+            NetworkServerInstance.OnUserLeft -= HandleClientLeft;
+            NetworkServerInstance.Dispose();
+            NetworkServerInstance = null;
+        }
     }
-
 
 }

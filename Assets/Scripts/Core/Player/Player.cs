@@ -47,7 +47,7 @@ public class TankPlayer : NetworkBehaviour
         if (IsServer)
         {
             // Look up the authenticated user's display name and broadcast it.
-            UserData userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(OwnerClientId);
+            UserData userData = HostSingleton.Instance.GameManager.NetworkServerInstance.GetUserDataByClientId(OwnerClientId);
             PlayerName.Value = userData.userName;
 
             // Tell the rest of the server-side systems that this player is alive.

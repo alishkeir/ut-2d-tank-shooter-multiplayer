@@ -38,32 +38,18 @@ public class ServerGameManager : IDisposable
         multiplayAllocationService = new MultiplayAllocationService();
     }
 
+
     public async Task StartGameServerAsync()
     {
-        // 1. Wait for Multiplay to allocate this server and give us the
-        //    matchmaking payload (players, teams, queue info).
-        MatchmakingResults allocationPayload = await multiplayAllocationService.AwaitAllocationAsync();
 
-        // 2. Create a server-hosted Session.  The session system will
-        //    automatically manage backfill tickets, heartbeat, and player
-        //    tracking using the matchmaker info from the payload.
-        //
-        //    If running locally (no payload), StartSessionAsync gracefully
-        //    handles the null payload and still creates a valid session.
-        await multiplayAllocationService.StartSessionAsync(
-            allocationPayload,
-            maxPlayers: 20,
-            sessionName: $"Game-{serverIP}:{serverPort}"
-        );
+        await multiplayAllocationService.BeginServerCheck();
 
-        // 3. Open the Netcode transport so clients can connect.
         if (!networkServer.OpenConnection(serverIP, serverPort))
         {
             Debug.LogWarning("NetworkServer did not start as expected.");
             return;
         }
 
-        // 4. Load the gameplay scene for all connected players.
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 

@@ -12,55 +12,56 @@
 // - GoToMainMenu() loads the main menu scene once auth has succeeded.
 // - OnDestroy disposes the ClientGameManager (which leaves any joined lobby
 //   and disconnects the network client cleanly).
+// UNITY 6 COMPAT: Removed unused "using System.Runtime.InteropServices.WindowsRuntime;"
+// — it is Windows-only and breaks Linux dedicated-server builds.
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class ClientSingleton : MonoBehaviour
 {
+    private static ClientSingleton instance;
+
+    public ClientGameManager GameManager { get; private set; }
 
     // Name of the main menu scene. Must match the scene in Build Settings.
     private const string _MENU_SCENE = "Menu";
 
-    private static ClientSingleton instance;
 
-    // The actual game-management object. Null until CreateClient() is called.
-    public ClientGameManager GameManager { get; private set; }
-
-    // Lazy singleton accessor. Looks up the instance in the scene if needed.
     public static ClientSingleton Instance
     {
         get
         {
-
             if (instance != null) { return instance; }
 
             instance = FindAnyObjectByType<ClientSingleton>();
 
             if (instance == null)
             {
-                Debug.LogError("ClientSingleton not found!");
+                Debug.LogError("No ClientSingleton in the scene!");
                 return null;
             }
 
             return instance;
         }
-
     }
-
-    void Start()
+    private void Start()
     {
-        // Keep this alive across scene loads so the GameManager survives.
-        DontDestroyOnLoad(this);
+        DontDestroyOnLoad(gameObject);
+
+
     }
 
-
-    // Creates the ClientGameManager and runs its async initialization.
-    // Returns true if authentication succeeded and we are ready to proceed.
     public async Task<bool> CreateClient()
     {
         GameManager = new ClientGameManager();
+
         return await GameManager.InitAsync();
+    }
+
+    void OnDestroy()
+    {
+        GameManager?.Dispose();
     }
 
     // Loads the main menu scene (only call this once the player is authenticated).
@@ -69,11 +70,7 @@ public class ClientSingleton : MonoBehaviour
         SceneManager.LoadScene(_MENU_SCENE);
     }
 
-    private void OnDestroy()
-    {
-        // Clean up the client on shutdown.
-        GameManager?.Dispose();
-    }
+
 
 
 }

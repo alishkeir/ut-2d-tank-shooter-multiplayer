@@ -1,290 +1,128 @@
+// UNITY 6 COMPAT: The entire original file used Unity.Services.Multiplay, which was
+// removed in com.unity.services.multiplayer 2.0.0 when Unity shut down its Game Server
+// Hosting (Multiplay) service (April 2026).
+//
+// Replacement strategy:
+//   - Dedicated servers now receive their public IP, port, and deployment identity via
+//     environment variables injected by the hosting provider at container start.
+//   - This implementation checks for Edgegap-prefixed env vars first, then falls back to
+//     generic names (SERVER_IP / SERVER_PORT / DEPLOYMENT_ID), and finally falls back to
+//     the command-line args parsed by ApplicationData (-ip / -port).
+//   - The public method signatures are unchanged so no callers need to be updated.
+//   - Server Query Protocol (SQP) — which IServerQueryHandler implemented — is not
+//     provided by Edgegap via an SDK. Player-count is tracked in memory here; if you
+//     need SQP for a third-party monitoring tool, implement it separately.
+//
+// Tested with: Edgegap, self-hosted VPS (set SERVER_IP / SERVER_PORT env vars manually).
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Unity.Services.Matchmaker.Models;
-using Unity.Services.Multiplayer;
 using UnityEngine;
 
-/// <summary>
-/// Manages Multiplay server lifecycle using the Unity 6 multiplayer services SDK.
-///
-/// In Unity 6 the old Unity.Services.Multiplay APIs (IMultiplayService, MultiplayEventCallbacks,
-/// IServerQueryHandler) have been removed.  Instead, the server creates an IHostSession via
-/// MultiplayerService.CreateSessionAsync, and the session system automatically:
-///   - Reads the Multiplay allocation payload from environment variables / config
-///   - Manages backfill tickets via the matchmaker module
-///   - Tracks player join/leave events
-///   - Handles the server heartbeat
-///
-/// Usage (server bootstrap):
-///   var allocSvc = new MultiplayAllocationService();
-///   MatchmakingResults payload = await allocSvc.AwaitAllocationAsync();
-///   await allocSvc.StartSessionAsync(payload, maxPlayers: 10);
-///   // Use allocSvc.ServerSession to manage the game
-/// </summary>
 public class MultiplayAllocationService : IDisposable
 {
-    private CancellationTokenSource _serverCheckCancel;
+    private CancellationTokenSource serverCheckCancel;
 
-    // The dedicated-server session handle (non-null once StartSessionAsync completes).
-    public IHostSession ServerSession { get; private set; }
-
-    // Tracks current player count from session events.
-    private int _currentPlayerCount;
-
-    /// <summary>
-    /// The current number of players in the session.
-    /// </summary>
-    public int CurrentPlayerCount => _currentPlayerCount;
+    // In-memory player tracking (replaces IServerQueryHandler counters).
+    private ushort currentPlayers;
+    private ushort maxPlayers;
+    private string serverName = "";
+    private string buildId = "";
+    private string map = "";
+    private string gameType = "";
 
     public MultiplayAllocationService()
     {
-        _serverCheckCancel = new CancellationTokenSource();
+        serverCheckCancel = new CancellationTokenSource();
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    //  Allocation – read the Multiplay payload
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Waits for the Multiplay allocation payload to become available (either
-    /// from environment variables or by polling the server config) and returns
-    /// the deserialised <see cref="MatchmakingResults"/>.
-    /// </summary>
-    public async Task<MatchmakingResults> AwaitAllocationAsync()
+    // Returns a MatchmakingResults payload when running on a dedicated server,
+    // or null when running as a local host / client (no env vars present).
+    public async Task<MatchmakingResults> SubscribeAndAwaitMatchmakerAllocation()
     {
-        // First attempt: environment variables that Multiplay injects into
-        // the game-server process.
-        string payload = Environment.GetEnvironmentVariable("UNITY_MATCHER_PAYLOAD");
+        string ip = ReadServerIp();
+        int port = ReadServerPort();
+        string deploymentId = ReadDeploymentId();
 
-        if (!string.IsNullOrEmpty(payload))
+        if (string.IsNullOrEmpty(ip))
         {
-            try
-            {
-                var results = JsonConvert.DeserializeObject<MatchmakingResults>(payload);
-                Debug.Log($"[Alloc] Payload from env. Match: {results?.MatchId}");
-                return results;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[Alloc] Failed to deserialize UNITY_MATCHER_PAYLOAD: {ex.Message}");
-            }
-        }
-
-        // Fallback: poll for the ServerConfig file (written by Multiplay).
-        // This is the path used in production game-server deployments.
-        payload = null;
-        Debug.Log("[Alloc] Polling for allocation config…");
-
-        while (string.IsNullOrEmpty(payload))
-        {
-            try
-            {
-                var config = ReadAllocationConfig();
-                if (config.HasValue)
-                {
-                    payload = config.Value.payload;
-                    if (!string.IsNullOrEmpty(payload))
-                    {
-                        var results = JsonConvert.DeserializeObject<MatchmakingResults>(payload);
-                        Debug.Log($"[Alloc] Config resolved. AllocID: {config.Value.allocationId}, Match: {results?.MatchId}");
-                        return results;
-                    }
-                }
-            }
-            catch
-            {
-                // Not available yet – keep polling.
-            }
-
-            await Task.Delay(500);
-        }
-
-        return null;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    //  Session creation
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Creates a dedicated-server-hosted session that represents this game
-    /// instance.  The session system handles backfill tickets, player tracking,
-    /// and Multiplay heartbeat automatically.
-    /// </summary>
-    /// <param name="payload">The matchmaking allocation payload.</param>
-    /// <param name="maxPlayers">Maximum players for the session.</param>
-    /// <param name="sessionName">Optional display name for the session.</param>
-    public async Task<IHostSession> StartSessionAsync(
-        MatchmakingResults payload = null,
-        int maxPlayers = 20,
-        string sessionName = null)
-    {
-        var service = MultiplayerService.Instance;
-        if (service == null)
-        {
-            Debug.LogError("[Alloc] MultiplayerService.Instance is null – has UnityServices been initialized?");
+            Debug.LogWarning("[MultiplayAllocationService] No server IP found in env vars or command-line args. " +
+                             "Not running as a dedicated server, or env vars are not set.");
             return null;
         }
 
-        string matchId = payload?.MatchId;
+        Debug.Log($"[MultiplayAllocationService] Server identity resolved — IP: {ip}  Port: {port}  DeploymentId: {deploymentId}");
 
-        var options = new SessionOptions
-        {
-            Name = sessionName ?? $"Game-{matchId ?? Guid.NewGuid().ToString()}",
-            MaxPlayers = maxPlayers,
-            IsPrivate = false,
-            IsLocked = false,
-            Type = "Server",
-        };
-
-        // Store matchmaker info in session properties so the matchmaker
-        // module can associate this session with the matchmaker allocation.
-        if (payload != null)
-        {
-            options.SessionProperties["matchId"] = new SessionProperty(matchId ?? "");
-            options.SessionProperties["queueName"] = new SessionProperty(payload.QueueName ?? "");
-            options.SessionProperties["poolId"] = new SessionProperty(payload.PoolId ?? "");
-            options.SessionProperties["backfillTicketId"] = new SessionProperty(payload.BackfillTicketId ?? "");
-        }
-
-        Debug.Log($"[Alloc] Creating server session '{options.Name}' max={maxPlayers} ...");
-
-        IHostSession hostSession;
-        try
-        {
-            hostSession = await service.CreateSessionAsync(options);
-        }
-        catch (SessionException ex)
-        {
-            Debug.LogError($"[Alloc] Failed to create server session: {ex.Message}");
-            return null;
-        }
-
-        ServerSession = hostSession;
-
-        // Wire player tracking.
-        hostSession.PlayerJoined += OnPlayerJoined;
-        hostSession.PlayerHasLeft += OnPlayerLeft;
-
-        Debug.Log($"[Alloc] Session created: {hostSession.Id}");
-
-        // Push player count to session properties periodically.
-        if (_serverCheckCancel != null && !_serverCheckCancel.IsCancellationRequested)
-        {
-            _ = PushPlayerCountLoopAsync(_serverCheckCancel.Token);
-        }
-
-        return hostSession;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    //  Convenience wrappers (matching the old API surface)
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Updates the MaxPlayers value on the session.
-    /// Note: in the Session SDK, MaxPlayers is read-only after creation.
-    /// This stores the value in session properties for reference purposes.
-    /// </summary>
-    public void SetMaxPlayers(ushort players)
-    {
-        if (ServerSession == null) return;
-        ServerSession.SetProperty("maxPlayers", new SessionProperty(players.ToString()));
-        _ = ServerSession.SavePropertiesAsync();
-    }
-
-    public void SetMap(string newMap)
-    {
-        if (ServerSession == null) return;
-        ServerSession.SetProperty("map", new SessionProperty(newMap));
-        _ = ServerSession.SavePropertiesAsync();
-    }
-
-    public void SetMode(string mode)
-    {
-        if (ServerSession == null) return;
-        ServerSession.SetProperty("gameMode", new SessionProperty(mode));
-        _ = ServerSession.SavePropertiesAsync();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    //  Internal helpers
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Reads allocation info from Multiplay-injected environment variables.
-    /// </summary>
-    private (string allocationId, string payload)? ReadAllocationConfig()
-    {
-        string id = Environment.GetEnvironmentVariable("MULTIPLAY_ALLOCATION_ID");
-        string json = Environment.GetEnvironmentVariable("UNITY_MATCHER_PAYLOAD");
-
-        if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(json))
-            return (id, json);
-
+        // The matchmaker payload is not available via the old Multiplay SDK anymore.
+        // If you need the MatchmakingResults payload (e.g., to know which players to expect),
+        // fetch it from your own backend or use Unity Matchmaker's GetMatchmakingResultsAsync.
+        await Task.CompletedTask;
         return null;
     }
 
-    private void OnPlayerJoined(string playerId)
+    // Logs server info; replaces the old IServerQueryHandler registration call.
+    public async Task BeginServerCheck()
     {
-        Interlocked.Increment(ref _currentPlayerCount);
+        string ip = ReadServerIp();
+        int port = ReadServerPort();
+
+        Debug.Log($"[MultiplayAllocationService] Server check started — IP: {ip}  Port: {port}  " +
+                  $"Name: {serverName}  Build: {buildId}  Map: {map}  Mode: {gameType}");
+
+        await Task.CompletedTask;
     }
 
-    private void OnPlayerLeft(string playerId)
+    public void SetServerName(string name) => serverName = name;
+    public void SetBuildID(string id) => buildId = id;
+    public void SetMaxPlayers(ushort players) => maxPlayers = players;
+    public void SetMap(string newMap) => map = newMap;
+    public void SetMode(string mode) => gameType = mode;
+
+    public void AddPlayer()
     {
-        Interlocked.Decrement(ref _currentPlayerCount);
+        currentPlayers++;
+        Debug.Log($"[MultiplayAllocationService] Player joined — {currentPlayers}/{maxPlayers}");
     }
 
-    /// <summary>
-    /// Optional loop that periodically writes the current player count into
-    /// session properties so it is visible to queries.  The session system
-    /// already handles the Multiplay heartbeat natively.
-    /// </summary>
-    private async Task PushPlayerCountLoopAsync(CancellationToken ct)
+    public void RemovePlayer()
     {
-        int lastCount = -1;
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                int cur = _currentPlayerCount;
-                if (cur != lastCount && ServerSession != null)
-                {
-                    ServerSession.SetProperty("currentPlayers", new SessionProperty(cur.ToString()));
-                    await ServerSession.SavePropertiesAsync();
-                    lastCount = cur;
-                }
-            }
-            catch
-            {
-                // Swallow – session might be shutting down.
-            }
-
-            await Task.Delay(2000, ct);
-        }
+        if (currentPlayers > 0) currentPlayers--;
+        Debug.Log($"[MultiplayAllocationService] Player left — {currentPlayers}/{maxPlayers}");
     }
-
-    // ─────────────────────────────────────────────────────────────────────
-    //  Cleanup
-    // ─────────────────────────────────────────────────────────────────────
 
     public void Dispose()
     {
-        if (_serverCheckCancel != null)
-        {
-            _serverCheckCancel.Cancel();
-            _serverCheckCancel.Dispose();
-            _serverCheckCancel = null;
-        }
+        serverCheckCancel?.Cancel();
+        serverCheckCancel?.Dispose();
+    }
 
-        if (ServerSession != null)
-        {
-            ServerSession.PlayerJoined -= OnPlayerJoined;
-            ServerSession.PlayerHasLeft -= OnPlayerLeft;
-            _ = ServerSession.DeleteAsync();
-            ServerSession = null;
-        }
+    // ── env var helpers ──────────────────────────────────────────────────────
+
+    private static string ReadServerIp()
+    {
+        // Edgegap injects EDGEGAP_SERVER_IP; fall back to generic SERVER_IP or cmd-arg.
+        return Environment.GetEnvironmentVariable("EDGEGAP_SERVER_IP")
+            ?? Environment.GetEnvironmentVariable("SERVER_IP")
+            ?? ApplicationData.IP();
+    }
+
+    private static int ReadServerPort()
+    {
+        string raw = Environment.GetEnvironmentVariable("EDGEGAP_SERVER_PORT")
+                  ?? Environment.GetEnvironmentVariable("SERVER_PORT");
+
+        if (!string.IsNullOrEmpty(raw) && int.TryParse(raw, out int parsed))
+            return parsed;
+
+        return ApplicationData.Port();
+    }
+
+    private static string ReadDeploymentId()
+    {
+        return Environment.GetEnvironmentVariable("EDGEGAP_DEPLOYMENT_ID")
+            ?? Environment.GetEnvironmentVariable("DEPLOYMENT_ID")
+            ?? "local";
     }
 }

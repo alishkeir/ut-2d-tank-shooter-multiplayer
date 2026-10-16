@@ -58,21 +58,20 @@ public class MatchplayMatchmaker : IDisposable
                 {
                     TicketStatusResponse checkTicket = await MatchmakerService.Instance.GetTicketAsync(lastUsedTicket);
 
-                    if (checkTicket.Type == typeof(MultiplayAssignment))
+                    // UNITY 6 COMPAT: MultiplayAssignment was the Unity-Multiplay-specific type.
+                    // Unity Multiplay hosting was shut down April 2026.  Any dedicated server
+                    // that exposes an IP and port (Edgegap, self-hosted VPS, AWS, etc.) now
+                    // returns IpPortAssignment.  Your UGS Matchmaker queue must be configured
+                    // for "IP/Port" assignment type, not "Multiplay", for this to trigger.
+                    if (checkTicket.Type == typeof(IpPortAssignment))
                     {
-                        MultiplayAssignment matchAssignment = (MultiplayAssignment)checkTicket.Value;
-
-                        if (matchAssignment.Status == MultiplayAssignment.StatusOptions.Found)
-                        {
-                            return ReturnMatchResult(MatchmakerPollingResult.Success, "", matchAssignment);
-                        }
-                        if (matchAssignment.Status == MultiplayAssignment.StatusOptions.Timeout ||
-                            matchAssignment.Status == MultiplayAssignment.StatusOptions.Failed)
-                        {
-                            return ReturnMatchResult(MatchmakerPollingResult.MatchAssignmentError,
-                                $"Ticket: {lastUsedTicket} - {matchAssignment.Status} - {matchAssignment.Message}", null);
-                        }
-                        Debug.Log($"Polled Ticket: {lastUsedTicket} Status: {matchAssignment.Status} ");
+                        IpPortAssignment matchAssignment = (IpPortAssignment)checkTicket.Value;
+                        return ReturnMatchResult(MatchmakerPollingResult.Success, "", matchAssignment);
+                    }
+                    // Still-pending: NoneAssignment means the ticket has not been matched yet.
+                    if (checkTicket.Type == typeof(NoneAssignment))
+                    {
+                        Debug.Log($"Polled Ticket: {lastUsedTicket} — waiting for match...");
                     }
 
                     await Task.Delay(TicketCooldown);
@@ -109,29 +108,22 @@ public class MatchplayMatchmaker : IDisposable
         await MatchmakerService.Instance.DeleteTicketAsync(lastUsedTicket);
     }
 
-    private MatchmakingResult ReturnMatchResult(MatchmakerPollingResult resultErrorType, string message, MultiplayAssignment assignment)
+    // UNITY 6 COMPAT: Parameter type changed from MultiplayAssignment to IpPortAssignment.
+    // IpPortAssignment is the generic assignment type used by any IP/port-based server
+    // (Edgegap, self-hosted VPS, AWS GameLift Anywhere, etc.).
+    private MatchmakingResult ReturnMatchResult(MatchmakerPollingResult resultErrorType, string message, IpPortAssignment assignment)
     {
         IsMatchmaking = false;
 
         if (assignment != null)
         {
-            string parsedIp = assignment.Ip;
-            int? parsedPort = assignment.Port;
-            if (parsedPort == null)
-            {
-                return new MatchmakingResult
-                {
-                    result = MatchmakerPollingResult.MatchAssignmentError,
-                    resultMessage = $"Port missing? - {assignment.Port}\n-{assignment.Message}"
-                };
-            }
-
             return new MatchmakingResult
             {
                 result = MatchmakerPollingResult.Success,
-                ip = parsedIp,
-                port = (int)parsedPort,
-                resultMessage = assignment.Message
+                ip = assignment.Ip,
+                // UNITY 6 COMPAT: IpPortAssignment.Port is int? (nullable); MatchmakingResult.port
+                // is a plain int, so coalesce a null port to 0 to satisfy the compiler.
+                port = assignment.Port ?? 0
             };
         }
 
