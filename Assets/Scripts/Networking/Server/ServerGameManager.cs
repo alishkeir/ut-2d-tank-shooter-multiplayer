@@ -1,145 +1,186 @@
 // ServerGameManager
 // -----------------
-// Non-MonoBehaviour class that owns the server-side networking logic for a
-// dedicated game server. Instantiated by ServerSingleton on startup and
-// disposed on shutdown.
+// Non-MonoBehaviour class that owns the server-side logic for a dedicated
+// game server. Instantiated by ServerSingleton, disposed on shutdown.
 //
 // Responsibilities:
-// - Await the Multiplay allocation payload (players, teams, match info).
-// - Create a server-hosted Session (the Unity 6 Session system replaces
-//   the old MultiplayEventCallbacks / IServerQueryHandler APIs).
-// - Open the Netcode transport connection.
-// - Load the Game scene.
-//
-// Used by: ServerSingleton, ApplicationController.
+// - Sign in to UGS with the service account (env vars).
+// - Create the control session and watch it for the allocator's pendingMatchId.
+// - Create a match session for each pending match (Relay or Direct); the
+//   session's network handler starts the Netcode server.
+// - Keep NetworkServer alive for connection approval / UserData tracking.
+// - Load the Game scene whenever the Netcode server (re)starts.
 using System;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
-using Unity.Services.Matchmaker.Models;
+using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+#if UNITY_SERVER
+using Unity.Services.Authentication.Server;
+#endif
+
 public class ServerGameManager : IDisposable
 {
-    string serverIP;
-    int serverPort;
-    int queryPort;
+    public NetworkServer NetworkServer { get; private set; }
 
-    NetworkServer networkServer;
-    MultiplayAllocationService multiplayAllocationService;
-    MatchplayBackfiller backfiller;
+    readonly NetworkManager networkManager;
+    readonly string localServerId;
+    readonly bool useRelay;
+    readonly int maxPlayers;
+    readonly string gameSceneName;
 
-    const string GameSceneName = "Game";
+    int playerCount;
 
-    public ServerGameManager(string serverIP, int serverPort, int queryPort, NetworkManager manager)
+#if UNITY_SERVER
+    // Must match the allocator module's constants.
+    const string AllocatorPlayerId = "LocalServerAllocator00000000";
+    const string PendingMatchIdKey = "pendingMatchId";
+    const string ControlSessionPrefix = "local-";
+
+    // Local testing only; load from a real secret store in production.
+    const string ServiceAccountKeyIdVariable = "LOCAL_SERVER_SERVICE_ACCOUNT_KEY_ID";
+    const string ServiceAccountSecretVariable = "LOCAL_SERVER_SERVICE_ACCOUNT_SECRET";
+
+    IServerSession controlSession;
+    IServerSession matchSession;
+    string lastHandledMatchId;
+#endif
+
+    public ServerGameManager(NetworkManager manager, string localServerId, bool useRelay, int maxPlayers, string gameSceneName)
     {
-        this.serverIP = serverIP;
-        this.serverPort = serverPort;
-        this.queryPort = queryPort;
-        networkServer = new NetworkServer(manager);
-        multiplayAllocationService = new MultiplayAllocationService();
-    }
+        networkManager = manager;
+        this.localServerId = localServerId;
+        this.useRelay = useRelay;
+        this.maxPlayers = maxPlayers;
+        this.gameSceneName = gameSceneName;
 
+        // Must exist BEFORE the match session starts the server, so approval is hooked in time.
+        NetworkServer = new NetworkServer(manager);
+        NetworkServer.OnUserJoined += UserJoined;
+        NetworkServer.OnUserLeft += UserLeft;
+    }
 
     public async Task StartGameServerAsync()
     {
-
-        await multiplayAllocationService.BeginServerCheck();
+#if UNITY_SERVER
+        // Load the Game scene every time the session spins the Netcode server up.
+        networkManager.OnServerStarted += OnServerStarted;
 
         try
         {
-            MatchmakingResults matchmakerPayload = await GetMatchMakerPayload();
+            var keyId = Environment.GetEnvironmentVariable(ServiceAccountKeyIdVariable)?.Trim().Trim('"', '\'');
+            var secret = Environment.GetEnvironmentVariable(ServiceAccountSecretVariable)?.Trim().Trim('"', '\'');
 
-            if (matchmakerPayload != null)
-            {
-                await StartBackfill(matchmakerPayload);
-                networkServer.OnUserJoined += UserJoined;
-                networkServer.OnUserLeft += UserLeft;
+            Debug.Log($"Key ID length: {keyId?.Length ?? 0}, Secret length: {secret?.Length ?? 0}");
 
-            }
-            else
-            {
-                Debug.LogWarning("No Matchmaking Results");
-            }
+            await ServerAuthenticationService.Instance.SignInWithServiceAccountAsync(keyId, secret);
+
+            // The control session only carries the match id, so it needs no network.
+            controlSession = await MultiplayerServerService.Instance.CreateSessionAsync(
+                ControlSessionPrefix + localServerId,
+                new SessionOptions
+                {
+                    Name = ControlSessionPrefix + localServerId,
+                    IsPrivate = true,
+                    MaxPlayers = 2
+                });
+
+            // The allocator joins once, then updates its player data for every later match.
+            controlSession.PlayerJoined += _ => OnControlSessionChanged();
+            controlSession.PlayerPropertiesChanged += OnControlSessionChanged;
+            Debug.Log($"Control session '{controlSession.Id}' ready.");
         }
         catch (Exception e)
         {
-
-            Debug.LogWarning(e);
+            Debug.LogException(Unwrap(e));
         }
+#else
+        Debug.LogWarning("ServerGameManager.StartGameServerAsync only runs in UNITY_SERVER builds.");
+        await Task.CompletedTask;
+#endif
+    }
 
-        if (!networkServer.OpenConnection(serverIP, serverPort))
+#if UNITY_SERVER
+    void OnControlSessionChanged() => _ = CreatePendingMatchSessionAsync();
+
+    async Task CreatePendingMatchSessionAsync()
+    {
+        var allocator = controlSession.Players.FirstOrDefault(player => player.Id == AllocatorPlayerId);
+        if (allocator == null ||
+            !allocator.Properties.TryGetValue(PendingMatchIdKey, out var pendingMatchId) ||
+            string.IsNullOrEmpty(pendingMatchId.Value) ||
+            pendingMatchId.Value == lastHandledMatchId)
         {
-            Debug.LogWarning("NetworkServer did not start as expected.");
             return;
         }
 
-        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
-    }
+        var matchId = pendingMatchId.Value;
+        lastHandledMatchId = matchId;
 
-    async Task StartBackfill(MatchmakingResults payload)
-    {
-        backfiller = new MatchplayBackfiller($"{serverIP}:{serverPort}", payload.QueueName, payload.MatchProperties, 20);
-
-        if (backfiller.NeedsPlayers())
-            await backfiller.BeginBackfilling();
-    }
-
-    async Task<MatchmakingResults> GetMatchMakerPayload()
-    {
-        Task<MatchmakingResults> matchmakerPayloadTask = multiplayAllocationService.SubscribeAndAwaitMatchmakerAllocation();
-
-        if (await Task.WhenAny(matchmakerPayloadTask, Task.Delay(20000)) == matchmakerPayloadTask)
+        try
         {
-            return matchmakerPayloadTask.Result;
-        }
+            // One NetworkManager runs one match at a time, so the next match replaces the current one.
+            if (matchSession != null)
+            {
+                var previous = matchSession;
+                matchSession = null;
+                await previous.DeleteAsync();
+            }
 
-        return null;
+            // Don't use the same SessionOptions.Type as the control session: the SDK keeps one session per type.
+            var options = new SessionOptions { MaxPlayers = maxPlayers };
+            options = useRelay ? options.WithRelayNetwork() : options.WithDirectNetwork();
+
+            matchSession = await MultiplayerServerService.Instance.CreateMatchSessionAsync(matchId, options);
+            matchSession.PlayerJoined += playerId => Debug.Log($"Player joined match {matchId}: {playerId}");
+            Debug.Log($"Match session '{matchSession.Id}' created ({(useRelay ? "Relay" : "Direct")}).");
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(Unwrap(e));
+        }
     }
+
+    void OnServerStarted()
+    {
+        networkManager.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+    }
+
+    // The server session APIs surface failures wrapped in AggregateException.
+    static Exception Unwrap(Exception exception) =>
+        exception is AggregateException aggregate ? aggregate.Flatten().InnerException ?? exception : exception;
+#endif
 
     void UserJoined(UserData userData)
     {
-        backfiller.AddPlayerToMatch(userData);
-        multiplayAllocationService.AddPlayer();
-        if (!backfiller.NeedsPlayers() && backfiller.IsBackfilling)
-        {
-            _ = backfiller.StopBackfill();
-        }
+        playerCount++;
+        Debug.Log($"[Server] {userData.userName} joined — {playerCount}/{maxPlayers}");
     }
 
     void UserLeft(UserData userData)
     {
-        int playerCount = backfiller.RemovePlayerFromMatch(userData.userAuthId);
-        multiplayAllocationService.RemovePlayer();
-
-        if (playerCount <= 0)
-        {
-            CloseServer();
-            return;
-        }
-
-        if (backfiller.NeedsPlayers() && !backfiller.IsBackfilling)
-        {
-            _ = backfiller.BeginBackfilling();
-        }
+        if (playerCount > 0) playerCount--;
+        Debug.Log($"[Server] {userData.userName} left — {playerCount}/{maxPlayers}");
+        // Hook point: close the match / quit when empty, if you want that behaviour.
     }
-
-    async void CloseServer()
-    {
-        await backfiller.StopBackfill();
-        Dispose();
-        Application.Quit();
-    }
-
 
     public void Dispose()
     {
-        networkServer.OnUserJoined -= UserJoined;
-        networkServer.OnUserLeft -= UserLeft;
+        if (NetworkServer != null)
+        {
+            NetworkServer.OnUserJoined -= UserJoined;
+            NetworkServer.OnUserLeft -= UserLeft;
+        }
 
-        backfiller?.Dispose();
-        multiplayAllocationService?.Dispose();
-        networkServer?.Dispose();
+#if UNITY_SERVER
+        if (networkManager != null) networkManager.OnServerStarted -= OnServerStarted;
+        _ = matchSession?.DeleteAsync();
+        _ = controlSession?.DeleteAsync();
+#endif
+
+        NetworkServer?.Dispose();
     }
 }

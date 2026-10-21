@@ -1,17 +1,11 @@
-// HostSingleton
-// -------------
-// A DontDestroyOnLoad MonoBehaviour singleton that owns the HostGameManager
+// ServerSingleton
+// ---------------
+// A DontDestroyOnLoad MonoBehaviour singleton that owns the ServerGameManager
 // for the duration of the application. Instantiated once at boot by
-// ApplicationController.
+// ApplicationController when running as a dedicated server.
 //
 // Access from anywhere:
-//   HostSingleton.Instance.GameManager
-//
-// Responsibilities:
-// - Lazily locate or return the singleton instance.
-// - Create a HostGameManager on demand via CreateHost().
-// - OnDestroy disposes the HostGameManager (which deletes the lobby and the
-//   NetworkServer cleanly).
+//   ServerSingleton.Instance.GameManager
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Core;
@@ -21,10 +15,15 @@ public class ServerSingleton : MonoBehaviour
 {
     private static ServerSingleton instance;
 
-    // The actual game-management object. Null until CreateHost() is called.
+    [Header("Dedicated Server (formerly ServerBootstrap)")]
+    [SerializeField] private string localServerId = "oracle-1";
+    [SerializeField] private bool useRelay = true;
+    [Tooltip("At least the queue pool's maximum player count.")]
+    [SerializeField] private int maxPlayers = 1;
+    [SerializeField] private string gameSceneName = "Game";
+
     public ServerGameManager GameManager { get; private set; }
 
-    // Lazy singleton accessor. Looks up the instance in the scene if needed.
     public static ServerSingleton Instance
     {
         get
@@ -45,26 +44,44 @@ public class ServerSingleton : MonoBehaviour
 
     private void Start()
     {
-        // Keep this alive across scene loads so the GameManager survives.
         DontDestroyOnLoad(this);
     }
 
-    // Instantiates a new HostGameManager. Call this once during boot.
+    // Initializes Unity Services and creates the ServerGameManager. Call once during boot.
     public async Task CreateServer()
     {
+
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("NetworkManager.Singleton is null. Ensure the NetworkManager exists in the boot scene.");
+            return;
+        }
+
+        Debug.Log($"NetworkManager: {NetworkManager.Singleton}");
+        Debug.Log($"UnityTransport: {NetworkManager.Singleton?.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>()}");
+
+        var manager = NetworkManager.Singleton;
+        var transport = NetworkManager.Singleton.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+
+        Debug.Log($"Transport component enabled: {transport.enabled}");
+        Debug.Log($"NetworkConfig exists: {NetworkManager.Singleton.NetworkConfig != null}");
+
+        if (manager.NetworkConfig != null)
+            Debug.Log($"Transport assigned: {manager.NetworkConfig.NetworkTransport != null}");
+
         await UnityServices.InitializeAsync();
 
         GameManager = new ServerGameManager(
-            ApplicationData.IP(),
-            ApplicationData.Port(),
-            ApplicationData.QPort(),
-            NetworkManager.Singleton
+            NetworkManager.Singleton,
+            localServerId,
+            useRelay,
+            maxPlayers,
+            gameSceneName
         );
     }
 
     private void OnDestroy()
     {
-        // Clean up the host on shutdown.
         GameManager?.Dispose();
     }
 }

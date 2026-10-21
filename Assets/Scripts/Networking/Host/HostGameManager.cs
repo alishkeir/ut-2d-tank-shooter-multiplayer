@@ -38,7 +38,7 @@ public class HostGameManager : IDisposable
     private const int maxConnections = 20;
     private const string GameSceneName = "Game";
 
-    public NetworkServer NetworkServerInstance { get; private set; }
+    public NetworkServer NetworkServer { get; private set; }
 
     public async Task StartHostAsync()
     {
@@ -95,7 +95,7 @@ public class HostGameManager : IDisposable
             return;
         }
 
-        NetworkServerInstance = new NetworkServer(networkManager: NetworkManager.Singleton);
+        NetworkServer = new NetworkServer(networkManager: NetworkManager.Singleton);
 
         UserData userData = new UserData
         {
@@ -110,7 +110,7 @@ public class HostGameManager : IDisposable
 
         NetworkManager.Singleton.StartHost();
 
-        NetworkServerInstance.OnClientLeft += HandleClientLeft;
+        NetworkServer.OnClientLeft += HandleClientLeft;
 
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
@@ -168,11 +168,11 @@ public class HostGameManager : IDisposable
 
         lobbyId = string.Empty;
 
-        if (NetworkServerInstance != null)
+        if (NetworkServer != null)
         {
-            NetworkServerInstance.OnClientLeft -= HandleClientLeft;
-            NetworkServerInstance.Dispose();
-            NetworkServerInstance = null;
+            NetworkServer.OnClientLeft -= HandleClientLeft;
+            NetworkServer.Dispose();
+            NetworkServer = null;
         }
     }
 
