@@ -33,8 +33,11 @@ public class ClientGameManager : IDisposable
     private const string MenuSceneName = "MainMenu";
 
     private NetworkClient networkClient;
+    private MatchplayMatchmaker matchmaker;
 
-    private JoinAllocation allocation;
+
+    JoinAllocation allocation;
+    UserData userData;
 
     private string joinedLobbyId;        // The lobby ID we are currently a member of (or null).
     private bool isStartingClient = false;   // True while we are starting the client.
@@ -44,11 +47,18 @@ public class ClientGameManager : IDisposable
         await UnityServices.InitializeAsync();
 
         networkClient = new NetworkClient(networkManager: NetworkManager.Singleton);
+        matchmaker = new MatchplayMatchmaker();
 
         if (!AuthenticationService.Instance.IsSignedIn)
         {
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
         }
+
+        userData = new UserData
+        {
+            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
+            userAuthId = AuthenticationService.Instance.PlayerId
+        };
 
         return AuthenticationService.Instance.IsSignedIn;
     }
@@ -78,12 +88,6 @@ public class ClientGameManager : IDisposable
 
         RelayServerData relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
         transport.SetRelayServerData(relayServerData);
-
-        UserData userData = new UserData
-        {
-            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
-            userAuthId = AuthenticationService.Instance.PlayerId
-        };
 
         string payload = JsonUtility.ToJson(userData);
         byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
@@ -122,6 +126,18 @@ public class ClientGameManager : IDisposable
     public void Disconnect()
     {
         networkClient.Disconnect();
+    }
+
+    async Task<MatchmakerPollingResult> GetMatchAsync()
+    {
+        MatchmakingResult matchmakingResult = await matchmaker.Matchmake(userData);
+
+        if (matchmakingResult.result != MatchmakerPollingResult.Success)
+        {
+            // connect to server
+        }
+
+        return matchmakingResult.result;
     }
 
     // Called by ClientSingleton.OnDestroy. Leaves any joined lobby and disposes the NetworkClient.

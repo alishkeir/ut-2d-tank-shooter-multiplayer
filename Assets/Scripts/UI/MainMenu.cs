@@ -8,6 +8,7 @@
 // - "Join"   -> calls StartClient() which reads the join code from the input
 //               field and calls ClientGameManager.StartClientAsync.
 // - "Quit"   -> calls ExitGame()    which closes the application.
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -18,6 +19,9 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private TMP_Text findMatchButtonText;
     [SerializeField] private TMP_Text queueTimerText;
     [SerializeField] private TMP_Text queueStatusText;
+
+    bool isMatchmaking = false;
+    bool isCanceling = false;
 
 
     void Start()
@@ -41,6 +45,29 @@ public class MainMenu : MonoBehaviour
     public async void StartClient()
     {
         await ClientSingleton.Instance.GameManager.StartClientAsync(joinCodeField.text);
+    }
+
+    public async void FindMatch()
+    {
+
+        if (isCanceling) return;
+
+        if (isMatchmaking)
+        {
+            queueStatusText.text = "Cancelling...";
+            isCanceling = true;
+            // cancel matchmaking
+            isCanceling = false;
+            isMatchmaking = false;
+            findMatchButtonText.text = "Find a Match";
+            queueStatusText.text = string.Empty;
+            return;
+        }
+
+        // start queue
+        findMatchButtonText.text = "Cancel";
+        queueStatusText.text = "Finding a match...";
+        isMatchmaking = true;
     }
 
     // Called by the "Quit" button. Closes the application.

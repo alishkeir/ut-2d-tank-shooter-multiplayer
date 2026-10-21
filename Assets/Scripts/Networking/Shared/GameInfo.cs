@@ -26,5 +26,12 @@ public static class GameInfoExtensions
     // Returns the queue name that must match what is configured in the
     // UGS Matchmaker dashboard under your project's queue settings.
     public static string ToMultiplayQueue(this GameInfo info)
-        => info.gameQueue == GameQueue.Team ? "team-queue" : "solo-queue";
+    {
+        return info.gameQueue switch
+        {
+            GameQueue.Solo => "solo-queue",
+            GameQueue.Team => "team-queue",
+            _ => "solo-queue" // default to solo queue if unknown
+        };
+    }
 }
