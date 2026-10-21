@@ -23,6 +23,8 @@ public class TankPlayer : NetworkBehaviour
 
     [Header("References")]
     [SerializeField] private CinemachineCamera cinemachineCamera; // The follow camera for this player.
+    [SerializeField] private Texture2D crosshairTexture;          // The crosshair texture for this player.
+
 
     [field: SerializeField] public Health Health { get; private set; }            // Health component on the player.
     [field: SerializeField] public CoinCollector Coins { get; private set; }     // Coin pickup component on the player.
@@ -61,6 +63,7 @@ public class TankPlayer : NetworkBehaviour
             cinemachineCamera.Priority = cameraOwnerPriority;
             cinemachineCamera.Prioritize();
             minimapIcon.color = playerColor; // Set the local player's minimap icon to green.
+            Cursor.SetCursor(crosshairTexture, new Vector2(crosshairTexture.width / 2, crosshairTexture.height / 2), CursorMode.Auto);
         }
 
     }

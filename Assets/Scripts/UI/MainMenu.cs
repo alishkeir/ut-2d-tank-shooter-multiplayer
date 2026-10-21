@@ -14,7 +14,21 @@ using UnityEngine;
 public class MainMenu : MonoBehaviour
 {
 
-    [SerializeField] private TMP_InputField joinCodeField; // Input field where the user pastes the host's join code.
+    [SerializeField] private TMP_InputField joinCodeField;
+    [SerializeField] private TMP_Text findMatchButtonText;
+    [SerializeField] private TMP_Text queueTimerText;
+    [SerializeField] private TMP_Text queueStatusText;
+
+
+    void Start()
+    {
+
+        if (ClientSingleton.Instance == null) return;
+
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+        queueStatusText.text = string.Empty;
+        queueTimerText.text = string.Empty;
+    }
 
 
     // Called by the "Host" button. Forwards to HostSingleton.GameManager.
