@@ -56,7 +56,9 @@ public class MainMenu : MonoBehaviour
         {
             queueStatusText.text = "Cancelling...";
             isCanceling = true;
-            // cancel matchmaking
+
+            await ClientSingleton.Instance.GameManager.CancelMatchmaking();
+
             isCanceling = false;
             isMatchmaking = false;
             findMatchButtonText.text = "Find a Match";
@@ -64,10 +66,32 @@ public class MainMenu : MonoBehaviour
             return;
         }
 
-        // start queue
+        ClientSingleton.Instance.GameManager.MatchMakeAsync(OnMatchMade);
         findMatchButtonText.text = "Cancel";
         queueStatusText.text = "Finding a match...";
         isMatchmaking = true;
+    }
+
+    void OnMatchMade(MatchmakerPollingResult result)
+    {
+        switch (result)
+        {
+            case MatchmakerPollingResult.Success:
+                queueStatusText.text = "Connecting...";
+                break;
+            case MatchmakerPollingResult.TicketCreationError:
+                queueStatusText.text = "TicketCreationError";
+                break;
+            case MatchmakerPollingResult.TicketCancellationError:
+                queueStatusText.text = "TicketCreationTimeout";
+                break;
+            case MatchmakerPollingResult.TicketRetrievalError:
+                queueStatusText.text = "TicketCreationFailed";
+                break;
+            case MatchmakerPollingResult.MatchAssignmentError:
+                queueStatusText.text = "MatchAssignmentError";
+                break;
+        }
     }
 
     // Called by the "Quit" button. Closes the application.

@@ -27,6 +27,7 @@ using Unity.Networking.Transport.Relay;
 using Unity.Services.Relay.Models; // UNITY 6 COMPAT: AllocationUtils moved here from Unity.Networking.Transport.Relay
 using System.Text;
 using Unity.Services.Authentication;
+using System.Text.RegularExpressions;
 
 public class ClientGameManager : IDisposable
 {
@@ -89,6 +90,11 @@ public class ClientGameManager : IDisposable
         RelayServerData relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
         transport.SetRelayServerData(relayServerData);
 
+        ConnectClient();
+    }
+
+    void ConnectClient()
+    {
         string payload = JsonUtility.ToJson(userData);
         byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
 
@@ -97,6 +103,13 @@ public class ClientGameManager : IDisposable
         NetworkManager.Singleton.StartClient();
 
         isStartingClient = false;
+    }
+
+    public void StartClient(string ip, int port)
+    {
+        UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        transport.SetConnectionData(ip, (ushort)port);
+        ConnectClient();
     }
 
     // Stores the lobby ID after we join one. Used by LeaveLobby() during shutdown.
@@ -128,13 +141,26 @@ public class ClientGameManager : IDisposable
         networkClient.Disconnect();
     }
 
+    public async void MatchMakeAsync(Action<MatchmakerPollingResult> onMatchmakingResponse)
+    {
+        if (matchmaker.IsMatchmaking) return;
+
+        MatchmakerPollingResult matchResult = await GetMatchAsync();
+
+        onMatchmakingResponse.Invoke(matchResult);
+    }
+
     async Task<MatchmakerPollingResult> GetMatchAsync()
     {
+        string payload = JsonUtility.ToJson(userData);
+        NetworkManager.Singleton.NetworkConfig.ConnectionData =
+            Encoding.UTF8.GetBytes(payload);
+
         MatchmakingResult matchmakingResult = await matchmaker.Matchmake(userData);
 
         if (matchmakingResult.result != MatchmakerPollingResult.Success)
         {
-            // connect to server
+            Debug.LogError($"Matchmaking failed: {matchmakingResult.resultMessage}");
         }
 
         return matchmakingResult.result;
@@ -147,5 +173,8 @@ public class ClientGameManager : IDisposable
         networkClient?.Dispose();
     }
 
-
+    public async Task CancelMatchmaking()
+    {
+        await matchmaker.CancelMatchmaking();
+    }
 }
