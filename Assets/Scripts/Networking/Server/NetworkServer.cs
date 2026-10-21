@@ -77,8 +77,35 @@ public class NetworkServer : IDisposable
     // 3. Approve the connection and place the player at a random SpawnPoint.
     private void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        string payload = System.Text.Encoding.UTF8.GetString(request.Payload);
-        UserData userData = JsonUtility.FromJson<UserData>(payload);
+        // A Relay session starts the dedicated server as a Host, so Netcode runs this callback for the
+        // server's own local client with an empty payload. Approve it, but don't spawn a player for it.
+        UserData userData = null;
+        if (request.Payload != null && request.Payload.Length > 0)
+        {
+            try
+            {
+                string payload = System.Text.Encoding.UTF8.GetString(request.Payload);
+                userData = JsonUtility.FromJson<UserData>(payload);
+            }
+            catch (ArgumentException)
+            {
+                userData = null;
+            }
+        }
+
+        if (userData == null || string.IsNullOrEmpty(userData.userAuthId))
+        {
+            bool isServerItself = request.ClientNetworkId == NetworkManager.ServerClientId;
+            if (!isServerItself)
+            {
+                Debug.LogWarning($"[NetworkServer] Rejecting client {request.ClientNetworkId}: missing or invalid UserData payload.");
+            }
+
+            response.Approved = isServerItself;
+            response.CreatePlayerObject = false;
+            response.Reason = isServerItself ? string.Empty : "Missing or invalid user data.";
+            return;
+        }
 
         // Store the mappings so we can resolve them later.
         clientIdToAuth[request.ClientNetworkId] = userData.userAuthId;
@@ -99,6 +126,8 @@ public class NetworkServer : IDisposable
     // Hooks up the disconnect callback once the server has actually started.
     private void OnNetworkReady()
     {
+        // The server can start once per match, so make sure the handler is only subscribed once.
+        networkManager.OnClientDisconnectCallback -= OnClientDisconnect;
         networkManager.OnClientDisconnectCallback += OnClientDisconnect;
 
     }

@@ -18,9 +18,13 @@ public class ServerSingleton : MonoBehaviour
     [Header("Dedicated Server (formerly ServerBootstrap)")]
     [SerializeField] private string localServerId = "oracle-1";
     [SerializeField] private bool useRelay = true;
-    [Tooltip("At least the queue pool's maximum player count.")]
-    [SerializeField] private int maxPlayers = 1;
+    [Tooltip("Must be at least the matchmaker queue pool's maximum player count (the rules currently require 20).")]
+    [SerializeField] private int maxPlayers = 20;
     [SerializeField] private string gameSceneName = "Game";
+    [Tooltip("Relay region id (for example the one closest to the server VM). Leave empty to let the SDK run QoS measurements to pick one, which adds a delay to every match.")]
+    [SerializeField] private string relayRegion = "";
+    [Tooltip("Lets the matchmaker refill the match when players leave. Needs the 'Matchmaker Backfill Admin' role on the service account, otherwise it fails with a 403.")]
+    [SerializeField] private bool enableBackfill = false;
 
     public ServerGameManager GameManager { get; private set; }
 
@@ -76,7 +80,9 @@ public class ServerSingleton : MonoBehaviour
             localServerId,
             useRelay,
             maxPlayers,
-            gameSceneName
+            gameSceneName,
+            enableBackfill,
+            relayRegion
         );
     }
 

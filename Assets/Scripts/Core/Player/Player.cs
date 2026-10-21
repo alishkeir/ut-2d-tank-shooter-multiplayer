@@ -48,18 +48,21 @@ public class TankPlayer : NetworkBehaviour
 
         if (IsServer)
         {
-            UserData userData;
+            // A dedicated server started through a Relay session runs as a Host, so IsHost can't be used to
+            // tell it apart from a player-hosted game. Use the same check as ApplicationController instead.
+            bool isDedicatedServer = SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null;
 
-            if (IsHost)
-            {     // Look up the authenticated user's display name and broadcast it.
-                userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(OwnerClientId);
-            }
-            else
+            // Look up the authenticated user's display name and broadcast it.
+            NetworkServer networkServer = isDedicatedServer
+                ? ServerSingleton.Instance?.GameManager?.NetworkServer
+                : HostSingleton.Instance?.GameManager?.NetworkServer;
+
+            UserData userData = networkServer?.GetUserDataByClientId(OwnerClientId);
+
+            if (userData != null)
             {
-                userData = ServerSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(OwnerClientId);
+                PlayerName.Value = userData.userName;
             }
-
-            PlayerName.Value = userData.userName;
 
             // Tell the rest of the server-side systems that this player is alive.
             OnPlayerSpawned?.Invoke(this);

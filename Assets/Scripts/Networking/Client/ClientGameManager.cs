@@ -40,6 +40,9 @@ public class ClientGameManager : IDisposable
     JoinAllocation allocation;
     UserData userData;
 
+    // The matchmade session we are in (or null). Fully qualified to avoid clashing with the other UGS namespaces here.
+    Unity.Services.Multiplayer.ISession matchSession;
+
     private string joinedLobbyId;        // The lobby ID we are currently a member of (or null).
     private bool isStartingClient = false;   // True while we are starting the client.
 
@@ -138,6 +141,30 @@ public class ClientGameManager : IDisposable
 
     public void Disconnect()
     {
+        _ = DisconnectAsync();
+    }
+
+    // When we are in a matchmade session, leave it through the SDK: it stops the NetworkManager itself and
+    // removes us from the session. Shutting the NetworkManager down directly leaves the session thinking it is
+    // still connected, which later logs "NetworkManagerSession.StopAsync: Called after dispose" on quit.
+    async Task DisconnectAsync()
+    {
+        var session = matchSession;
+        matchSession = null;
+
+        if (session != null)
+        {
+            try
+            {
+                await session.LeaveAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Leaving the match session failed: {e.Message}");
+            }
+        }
+
+        // Loads the menu and makes sure the NetworkManager is down (also covers non-session connections).
         networkClient.Disconnect();
     }
 
@@ -161,6 +188,10 @@ public class ClientGameManager : IDisposable
         if (matchmakingResult.result != MatchmakerPollingResult.Success)
         {
             Debug.LogError($"Matchmaking failed: {matchmakingResult.resultMessage}");
+        }
+        else
+        {
+            matchSession = matchmakingResult.session;
         }
 
         return matchmakingResult.result;

@@ -44,3 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ddf722b4ead5f40a4b0d4eb184cf94, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ServerSingleton
+  localServerId: oracle-1
+  useRelay: 1
+  maxPlayers: 20
+  gameSceneName: Game
+  relayRegion: europe-west4
+  enableBackfill: 1

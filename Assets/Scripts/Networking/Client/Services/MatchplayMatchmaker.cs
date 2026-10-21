@@ -21,6 +21,10 @@ public class MatchmakingResult
     public int port;
     public MatchmakerPollingResult result;
     public string resultMessage;
+
+    // The joined match session (only set on success). Leave it with LeaveAsync instead of shutting the
+    // NetworkManager down directly, so the SDK can clean up the session and the lobby.
+    public ISession session;
 }
 
 public class MatchplayMatchmaker : IDisposable
@@ -36,6 +40,8 @@ public class MatchplayMatchmaker : IDisposable
 
         IsMatchmaking = true;
 
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+
         try
         {
             var options = new MatchmakerOptions
@@ -47,16 +53,19 @@ public class MatchplayMatchmaker : IDisposable
                 }
             };
 
-            await MultiplayerService.Instance.MatchmakeSessionAsync(
+            ISession session = await MultiplayerService.Instance.MatchmakeSessionAsync(
                 options,
                 new SessionOptions { MaxPlayers = 1 },
                 cancelToken.Token
             );
 
+            Debug.Log($"[Matchmaking] Joined the match session {timer.Elapsed.TotalSeconds:0.00}s after the ticket was created.");
+
             return new MatchmakingResult
             {
                 result = MatchmakerPollingResult.Success,
-                resultMessage = "Joined match session."
+                resultMessage = "Joined match session.",
+                session = session
             };
         }
         catch (OperationCanceledException)
