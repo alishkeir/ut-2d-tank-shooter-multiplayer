@@ -96,7 +96,7 @@ public class LobbiesList : MonoBehaviour
         {
             // Join the lobby (so we're counted as a member) and read the Relay join code.
             Lobby joiningLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
-            string joinCode = joiningLobby.Data["RelayJoinCode"].Value;
+            string joinCode = joiningLobby.Data["JoinCode"].Value;
 
             // Remember the lobby ID so we can leave it cleanly on disconnect.
             ClientSingleton.Instance.GameManager.SetJoinedLobbyId(lobby.Id);

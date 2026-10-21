@@ -1,14 +1,17 @@
-#if UNITY_EDITOR || UNITY_SERVER
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Services.Authentication.Server;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
+#if UNITY_SERVER
+using Unity.Services.Authentication.Server;
+#endif
 public class ServerBootstrap : MonoBehaviour
 {
+
+#if UNITY_SERVER
     // Must match the module's constants.
     const string AllocatorPlayerId = "LocalServerAllocator00000000";
     const string PendingMatchIdKey = "pendingMatchId";
@@ -28,6 +31,7 @@ public class ServerBootstrap : MonoBehaviour
     IServerSession m_MatchSession;
     string m_LastHandledMatchId;
 
+
     async void Start()
     {
 
@@ -39,12 +43,12 @@ public class ServerBootstrap : MonoBehaviour
             await UnityServices.InitializeAsync();
 
 
-            Debug.Log($"Key ID present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ServiceAccountKeyIdVariable))}");
-            Debug.Log($"Secret present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ServiceAccountSecretVariable))}");
+            var keyId = Environment.GetEnvironmentVariable(ServiceAccountKeyIdVariable)?.Trim().Trim('"', '\'');
+            var secret = Environment.GetEnvironmentVariable(ServiceAccountSecretVariable)?.Trim().Trim('"', '\'');
 
-            await ServerAuthenticationService.Instance.SignInWithServiceAccountAsync(
-                Environment.GetEnvironmentVariable(ServiceAccountKeyIdVariable),
-                Environment.GetEnvironmentVariable(ServiceAccountSecretVariable));
+            Debug.Log($"Key ID length: {keyId?.Length ?? 0}, Secret length: {secret?.Length ?? 0}");
+
+            await ServerAuthenticationService.Instance.SignInWithServiceAccountAsync(keyId, secret);
 
 
             // The control session only carries the match id, so it needs no network.
@@ -106,5 +110,6 @@ public class ServerBootstrap : MonoBehaviour
     // The server session APIs surface failures wrapped in AggregateException.
     static Exception Unwrap(Exception exception) =>
         exception is AggregateException aggregate ? aggregate.Flatten().InnerException ?? exception : exception;
-}
+
 #endif
+}
