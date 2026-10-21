@@ -145,28 +145,28 @@ public class HostGameManager : IDisposable
 
     public async Task ShutdownAsync()
     {
+        if (string.IsNullOrEmpty(lobbyId)) return;
+
         if (heartbeatCoroutine != null)
         {
             HostSingleton.Instance.StopCoroutine(heartbeatCoroutine);
             heartbeatCoroutine = null;
         }
-        if (!string.IsNullOrEmpty(lobbyId))
+
+        try
         {
-            try
-            {
-                await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
-            }
-            catch (LobbyServiceException lobbyServiceException)
-            {
-
-                if (lobbyServiceException.Reason != LobbyExceptionReason.LobbyNotFound)
-                {
-                    Debug.LogError(lobbyServiceException);
-                }
-            }
-
-            lobbyId = string.Empty;
+            await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
         }
+        catch (LobbyServiceException lobbyServiceException)
+        {
+
+            if (lobbyServiceException.Reason != LobbyExceptionReason.LobbyNotFound)
+            {
+                Debug.LogError(lobbyServiceException);
+            }
+        }
+
+        lobbyId = string.Empty;
 
         if (NetworkServerInstance != null)
         {
