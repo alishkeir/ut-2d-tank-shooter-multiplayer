@@ -336,7 +336,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &593868554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -349,9 +349,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31fb3958df435994087983d6968d0b9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ServerBootstrap
-  m_LocalServerId: oracle-1
-  m_UseRelay: 1
-  m_MaxPlayers: 1
 --- !u!4 &593868555
 Transform:
   m_ObjectHideFlags: 0

@@ -41,11 +41,11 @@ public class ApplicationController : MonoBehaviour
 
         if (isDedicatedServer)
         {
-            // ServerSingleton serverSingleton = Instantiate(serverPrefab);
+            ServerSingleton serverSingleton = Instantiate(serverPrefab);
 
-            // await serverSingleton.CreateServer();
+            await serverSingleton.CreateServer();
 
-            // await serverSingleton.GameManager.StartGameServerAsync();
+            await serverSingleton.GameManager.StartGameServerAsync();
 
             return;
         }

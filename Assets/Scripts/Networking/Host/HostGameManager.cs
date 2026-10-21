@@ -110,7 +110,7 @@ public class HostGameManager : IDisposable
 
         NetworkManager.Singleton.StartHost();
 
-        NetworkServerInstance.OnUserLeft += HandleClientLeft;
+        NetworkServerInstance.OnClientLeft += HandleClientLeft;
 
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
@@ -170,7 +170,7 @@ public class HostGameManager : IDisposable
 
         if (NetworkServerInstance != null)
         {
-            NetworkServerInstance.OnUserLeft -= HandleClientLeft;
+            NetworkServerInstance.OnClientLeft -= HandleClientLeft;
             NetworkServerInstance.Dispose();
             NetworkServerInstance = null;
         }

@@ -24,7 +24,10 @@ public class NetworkServer : IDisposable
 
     // Fired on the server when a connected user disconnects.
     // The argument is the user's AuthId (from UserData.userAuthId).
-    public event Action<string> OnUserLeft;
+    public event Action<string> OnClientLeft;
+
+    public event Action<UserData> OnUserJoined;
+    public event Action<UserData> OnUserLeft;
 
     // Lookup tables: clientId <-> authId <-> UserData.
     private Dictionary<ulong, string> clientIdToAuth = new();
@@ -60,7 +63,7 @@ public class NetworkServer : IDisposable
 
 
 
-    public bool  OpenConnection(string ip, int port)
+    public bool OpenConnection(string ip, int port)
     {
         UnityTransport transport = networkManager.gameObject.GetComponent<UnityTransport>();
         transport.SetConnectionData(ip, (ushort)port);
@@ -80,6 +83,8 @@ public class NetworkServer : IDisposable
         // Store the mappings so we can resolve them later.
         clientIdToAuth[request.ClientNetworkId] = userData.userAuthId;
         authIdToUserData[userData.userAuthId] = userData;
+
+        OnUserJoined?.Invoke(userData);
 
 
         // Approve the connection and tell Netcode where/whether to spawn the player object.
@@ -105,7 +110,8 @@ public class NetworkServer : IDisposable
         if (clientIdToAuth.TryGetValue(clientId, out string authId))
         {
             // Notify the host (e.g. HostGameManager) to update the lobby.
-            OnUserLeft?.Invoke(authId);
+            OnClientLeft?.Invoke(authId);
+            OnUserLeft?.Invoke(authIdToUserData[authId]);
             // Clean up the lookups.
             clientIdToAuth.Remove(clientId);
             authIdToUserData.Remove(authId);
