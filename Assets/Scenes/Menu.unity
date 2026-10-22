@@ -3022,6 +3022,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LobbiesList
   lobbyItemPrefab: {fileID: 5475362089162591159, guid: 7f4274a8fa5739740899d0a67dc97e4c, type: 3}
   lobbyItemParent: {fileID: 1295713947}
+  mainMenu: {fileID: 1472423598}
 --- !u!1 &1382606333
 GameObject:
   m_ObjectHideFlags: 0

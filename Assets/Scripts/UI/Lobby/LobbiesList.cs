@@ -28,9 +28,11 @@ public class LobbiesList : MonoBehaviour
 
     [SerializeField] private LobbyItem lobbyItemPrefab;   // Prefab used to render each lobby in the list.
     [SerializeField] private Transform lobbyItemParent;   // Parent transform under which lobby items are spawned.
+    [SerializeField] private MainMenu mainMenu;   // Parent transform under which lobby items are spawned.
 
-    private bool isJoining = false;  // Prevents multiple concurrent join attempts.
     private bool isRefreshing = false; // Prevents multiple concurrent refreshes.
+
+
 
 
     // Refresh the list automatically when the panel is enabled.
@@ -86,29 +88,11 @@ public class LobbiesList : MonoBehaviour
 
     }
 
-    // Joins the given lobby and connects to its Relay server.
-    public async void JoinAsync(Lobby lobby)
+
+    public void JoinAsync(Lobby lobby)
     {
-        if (isJoining) { return; }
-        isJoining = true;
+        mainMenu.JoinAsync(lobby);
 
-        try
-        {
-            // Join the lobby (so we're counted as a member) and read the Relay join code.
-            Lobby joiningLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
-            string joinCode = joiningLobby.Data["JoinCode"].Value;
-
-            // Remember the lobby ID so we can leave it cleanly on disconnect.
-            ClientSingleton.Instance.GameManager.SetJoinedLobbyId(lobby.Id);
-
-            // Connect to the host's Relay server using the join code.
-            await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-        }
-        isJoining = false;
     }
 
 }
