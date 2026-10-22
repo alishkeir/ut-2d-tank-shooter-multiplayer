@@ -30,13 +30,13 @@ using UnityEngine.SceneManagement;
 
 public class HostGameManager : IDisposable
 {
-    private Allocation allocation;
-    private Coroutine heartbeatCoroutine;
-    private string joinCode;
-    private string lobbyId;
+    Allocation allocation;
+    Coroutine heartbeatCoroutine;
+    public string JoinCode { get; private set; }
+    string lobbyId;
 
-    private const int maxConnections = 20;
-    private const string GameSceneName = "Game";
+    const int maxConnections = 20;
+    const string GameSceneName = "Game";
 
     public NetworkServer NetworkServer { get; private set; }
 
@@ -54,8 +54,8 @@ public class HostGameManager : IDisposable
 
         try
         {
-            joinCode = await RelayService.Instance.GetJoinCodeAsync(allocationId: allocation.AllocationId);
-            Debug.Log(joinCode);
+            JoinCode = await RelayService.Instance.GetJoinCodeAsync(allocationId: allocation.AllocationId);
+            Debug.Log(JoinCode);
         }
         catch (Exception exc)
         {
@@ -77,7 +77,7 @@ public class HostGameManager : IDisposable
                 {
                     "JoinCode", new DataObject(
                         visibility: DataObject.VisibilityOptions.Member,
-                        value: joinCode)
+                        value: JoinCode)
                 }
             };
             string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Unknown");

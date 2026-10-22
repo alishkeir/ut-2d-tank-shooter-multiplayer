@@ -36,6 +36,8 @@ public class ClientGameManager : IDisposable
     private NetworkClient networkClient;
     private MatchplayMatchmaker matchmaker;
 
+    public string JoinCode { get; private set; }
+
 
     JoinAllocation allocation;
     UserData userData;
@@ -43,7 +45,7 @@ public class ClientGameManager : IDisposable
     // The matchmade session we are in (or null). Fully qualified to avoid clashing with the other UGS namespaces here.
     Unity.Services.Multiplayer.ISession matchSession;
 
-    private string joinedLobbyId;        // The lobby ID we are currently a member of (or null).
+    string joinedLobbyId;       // The lobby ID we are currently a member of (or null).
     private bool isStartingClient = false;   // True while we are starting the client.
 
     public async Task<bool> InitAsync()
@@ -77,6 +79,7 @@ public class ClientGameManager : IDisposable
 
         if (isStartingClient) { return; }
         isStartingClient = true;
+        JoinCode = joinCode;
 
         try
         {
@@ -126,11 +129,11 @@ public class ClientGameManager : IDisposable
     private async void LeaveLobby()
     {
         if (string.IsNullOrEmpty(joinedLobbyId)) { return; }
+        joinedLobbyId = string.Empty;
 
         try
         {
             await LobbyService.Instance.RemovePlayerAsync(joinedLobbyId, AuthenticationService.Instance.PlayerId);
-            joinedLobbyId = null;
         }
         catch (LobbyServiceException e)
         {
