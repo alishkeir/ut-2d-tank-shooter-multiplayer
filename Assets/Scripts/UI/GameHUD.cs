@@ -25,12 +25,12 @@ public class GameHUD : MonoBehaviour
 
         if (NetworkManager.Singleton.IsHost)
         {
-            Debug.Log(HostSingleton.Instance.GameManager.lobbyId);
+            Debug.Log(HostSingleton.Instance.GameManager.JoinCode);
             lobbyJoinCodeText.text = HostSingleton.Instance.GameManager.JoinCode;
         }
         else
         {
-            Debug.Log(ClientSingleton.Instance.GameManager.joinedLobbyId);
+            Debug.Log(ClientSingleton.Instance.GameManager.JoinCode);
             lobbyJoinCodeText.text = ClientSingleton.Instance.GameManager.JoinCode;
         }
     }
