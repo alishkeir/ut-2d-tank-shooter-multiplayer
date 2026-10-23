@@ -27,6 +27,7 @@ public class ServerGameManager : IDisposable
 {
     public NetworkServer NetworkServer { get; private set; }
 
+
     readonly NetworkManager networkManager;
     readonly string localServerId;
     readonly bool useRelay;
@@ -36,6 +37,8 @@ public class ServerGameManager : IDisposable
     readonly string relayRegion;
 
     int playerCount;
+
+
 
 #if UNITY_SERVER
     // Must match the allocator module's constants.
@@ -56,7 +59,7 @@ public class ServerGameManager : IDisposable
     readonly SemaphoreSlim sessionLock = new SemaphoreSlim(1, 1);
 #endif
 
-    public ServerGameManager(NetworkManager manager, string localServerId, bool useRelay, int maxPlayers, string gameSceneName,
+    public ServerGameManager(NetworkManager manager, string localServerId, bool useRelay, int maxPlayers, string gameSceneName, NetworkObject playerPrefab,
         bool enableBackfill = false, string relayRegion = null)
     {
         networkManager = manager;
@@ -68,7 +71,7 @@ public class ServerGameManager : IDisposable
         this.relayRegion = relayRegion;
 
         // Must exist BEFORE the match session starts the server, so approval is hooked in time.
-        NetworkServer = new NetworkServer(manager);
+        NetworkServer = new NetworkServer(manager, playerPrefab);
         NetworkServer.OnUserJoined += UserJoined;
         NetworkServer.OnUserLeft += UserLeft;
     }

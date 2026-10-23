@@ -349,9 +349,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31fb3958df435994087983d6968d0b9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ServerBootstrap
-  m_LocalServerId: oracle-1
-  m_UseRelay: 1
-  m_MaxPlayers: 1
 --- !u!4 &593868555
 Transform:
   m_ObjectHideFlags: 0
@@ -432,7 +429,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 987891666}
-    PlayerPrefab: {fileID: 7089450544396560383, guid: 08d13bc28284153408587645dc70ee9c, type: 3}
+    PlayerPrefab: {fileID: 0}
     Prefabs:
       NetworkPrefabsLists:
       - {fileID: 11400000, guid: 7265174a0d4d3714095a3a598a32e512, type: 2}
@@ -638,6 +635,7 @@ MonoBehaviour:
   clientPrefab: {fileID: 3706580566349350378, guid: c6ae5b223a5e9814e8ff1623bbb3a26a, type: 3}
   hostPrefab: {fileID: 2001549801493352353, guid: 4589b1d54a26f1942baf2de3d88802bf, type: 3}
   serverPrefab: {fileID: 7228582303472074206, guid: cb2e785cd4267d84da62e0535d35b333, type: 3}
+  playerPrefab: {fileID: 2184890490851329806, guid: 08d13bc28284153408587645dc70ee9c, type: 3}
 --- !u!4 &1516978901
 Transform:
   m_ObjectHideFlags: 0

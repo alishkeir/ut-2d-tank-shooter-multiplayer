@@ -13,6 +13,7 @@
 // Constructed by HostGameManager; do not create one yourself.
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -20,7 +21,9 @@ using UnityEngine;
 public class NetworkServer : IDisposable
 {
 
-    private NetworkManager networkManager; // The Netcode NetworkManager we are wrapping.
+    NetworkManager networkManager; // The Netcode NetworkManager we are wrapping.
+    NetworkObject playerPrefab;
+
 
     // Fired on the server when a connected user disconnects.
     // The argument is the user's AuthId (from UserData.userAuthId).
@@ -30,14 +33,16 @@ public class NetworkServer : IDisposable
     public event Action<UserData> OnUserLeft;
 
     // Lookup tables: clientId <-> authId <-> UserData.
-    private Dictionary<ulong, string> clientIdToAuth = new();
-    private Dictionary<string, UserData> authIdToUserData = new();
+    Dictionary<ulong, string> clientIdToAuth = new();
+    Dictionary<string, UserData> authIdToUserData = new();
+
 
 
     // Subscribes to connection approval and server-start events. Called from HostGameManager.
-    public NetworkServer(NetworkManager networkManager)
+    public NetworkServer(NetworkManager networkManager, NetworkObject playerPrefab)
     {
         this.networkManager = networkManager;
+        this.playerPrefab = playerPrefab;
 
         networkManager.ConnectionApprovalCallback += ApprovalCheck;
         networkManager.OnServerStarted += OnNetworkReady;
@@ -114,11 +119,22 @@ public class NetworkServer : IDisposable
         OnUserJoined?.Invoke(userData);
 
 
-        // Approve the connection and tell Netcode where/whether to spawn the player object.
+        _ = SpawnPlayerDelayed(request.ClientNetworkId);
+
+        // approve the connection and tell Netcode where/whether to spawn the player object.
         response.Approved = true;
-        response.Position = SpawnPoint.GetRandomSpawnPos();
-        response.Rotation = Quaternion.identity;
-        response.CreatePlayerObject = true;
+        response.CreatePlayerObject = false;
+
+
+    }
+
+    private async Task SpawnPlayerDelayed(ulong clientId)
+    {
+        await Task.Delay(1000);
+
+        NetworkObject playerInstance = GameObject.Instantiate(playerPrefab, SpawnPoint.GetRandomSpawnPos(), Quaternion.identity);
+
+        playerInstance.SpawnAsPlayerObject(clientId);
 
     }
 

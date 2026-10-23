@@ -12,6 +12,7 @@
 // - Create a HostGameManager on demand via CreateHost().
 // - OnDestroy disposes the HostGameManager (which deletes the lobby and the
 //   NetworkServer cleanly).
+using Unity.Netcode;
 using UnityEngine;
 
 public class HostSingleton : MonoBehaviour
@@ -47,9 +48,9 @@ public class HostSingleton : MonoBehaviour
     }
 
     // Instantiates a new HostGameManager. Call this once during boot.
-    public void CreateHost()
+    public void CreateHost(NetworkObject playerPrefab)
     {
-        GameManager = new HostGameManager();
+        GameManager = new HostGameManager(playerPrefab);
     }
 
     private void OnDestroy()

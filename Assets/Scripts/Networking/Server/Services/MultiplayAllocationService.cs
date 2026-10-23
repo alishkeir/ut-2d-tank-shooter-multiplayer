@@ -33,6 +33,14 @@ public class MultiplayAllocationService : IDisposable
     private string map = "";
     private string gameType = "";
 
+
+
+    public void SetServerName(string name) => serverName = name;
+    public void SetBuildID(string id) => buildId = id;
+    public void SetMaxPlayers(ushort players) => maxPlayers = players;
+    public void SetMap(string newMap) => map = newMap;
+    public void SetMode(string mode) => gameType = mode;
+
     public MultiplayAllocationService()
     {
         serverCheckCancel = new CancellationTokenSource();
@@ -74,11 +82,6 @@ public class MultiplayAllocationService : IDisposable
         await Task.CompletedTask;
     }
 
-    public void SetServerName(string name) => serverName = name;
-    public void SetBuildID(string id) => buildId = id;
-    public void SetMaxPlayers(ushort players) => maxPlayers = players;
-    public void SetMap(string newMap) => map = newMap;
-    public void SetMode(string mode) => gameType = mode;
 
     public void AddPlayer()
     {

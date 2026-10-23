@@ -52,7 +52,7 @@ public class ServerSingleton : MonoBehaviour
     }
 
     // Initializes Unity Services and creates the ServerGameManager. Call once during boot.
-    public async Task CreateServer()
+    public async Task CreateServer(NetworkObject playerPrefab)
     {
 
         if (NetworkManager.Singleton == null)
@@ -81,6 +81,7 @@ public class ServerSingleton : MonoBehaviour
             useRelay,
             maxPlayers,
             gameSceneName,
+            playerPrefab,
             enableBackfill,
             relayRegion
         );

@@ -32,6 +32,9 @@ public class HostGameManager : IDisposable
 {
     Allocation allocation;
     Coroutine heartbeatCoroutine;
+
+    NetworkObject playerPrefab;
+
     public string JoinCode { get; private set; }
     string lobbyId;
 
@@ -39,6 +42,11 @@ public class HostGameManager : IDisposable
     const string GameSceneName = "Game";
 
     public NetworkServer NetworkServer { get; private set; }
+
+    public HostGameManager(NetworkObject playerPrefab)
+    {
+        this.playerPrefab = playerPrefab;
+    }
 
     public async Task StartHostAsync()
     {
@@ -95,7 +103,7 @@ public class HostGameManager : IDisposable
             return;
         }
 
-        NetworkServer = new NetworkServer(networkManager: NetworkManager.Singleton);
+        NetworkServer = new NetworkServer(networkManager: NetworkManager.Singleton, playerPrefab);
 
         UserData userData = new UserData
         {
