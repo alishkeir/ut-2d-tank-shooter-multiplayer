@@ -14,6 +14,7 @@
 // Cost is in coins (see CoinCollector). Players without enough coins cannot fire.
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class ProjectileLauncher : NetworkBehaviour
 {
@@ -39,10 +40,10 @@ public class ProjectileLauncher : NetworkBehaviour
 
 
 
-    private bool shouldFire;     // True while the fire button is held (from the InputReader).
-    private float timer;         // Cooldown timer between shots.
-    private float muzzleFlashTimer; // Time remaining on the muzzle flash effect.
-
+    bool shouldFire;     // True while the fire button is held (from the InputReader).
+    float timer;         // Cooldown timer between shots.
+    float muzzleFlashTimer; // Time remaining on the muzzle flash effect.
+    bool isPointerOverUI;
 
 
 
@@ -63,6 +64,8 @@ public class ProjectileLauncher : NetworkBehaviour
 
         // Only the owner can request firing.
         if (!IsOwner) { return; }
+
+        isPointerOverUI = EventSystem.current.IsPointerOverGameObject();
 
         // Tick down the fire-rate cooldown.
         if (timer > 0)
@@ -111,6 +114,8 @@ public class ProjectileLauncher : NetworkBehaviour
     // Cache the latest fire button state.
     private void HandlePrimaryFire(bool shouldFire)
     {
+        if (shouldFire && isPointerOverUI) return;
+
         this.shouldFire = shouldFire;
     }
 

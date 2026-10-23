@@ -93,6 +93,9 @@ public class Leaderboard : NetworkBehaviour
     // React to add/remove/value changes of the network list.
     private void HandleLeaderboardEntitiesChanged(NetworkListEvent<LeaderboardEntityState> changeEvent)
     {
+
+        if (!gameObject.scene.isLoaded) return;
+
         switch (changeEvent.Type)
         {
             case NetworkListEvent<LeaderboardEntityState>.EventType.Add:

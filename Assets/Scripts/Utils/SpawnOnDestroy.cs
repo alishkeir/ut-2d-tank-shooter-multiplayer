@@ -19,6 +19,7 @@ public class SpawnOnDestroy : MonoBehaviour
     // Called by Unity when the GameObject is being destroyed (or right before the scene unloads).
     private void OnDestroy()
     {
+        if (!gameObject.scene.isLoaded) return;
         // Drop a fresh copy of the prefab at our last known position.
         Instantiate(prefab, transform.position, Quaternion.identity);
     }
